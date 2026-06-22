@@ -4,7 +4,7 @@
 
 Lovelace custom card for the [Docker Manager](https://github.com/jeanphic/ha-docker-manager) integration.
 
-Displays a single Docker container with compact view and expandable stats.
+![Docker Manager Card Preview](https://raw.githubusercontent.com/jeanphic/ha-docker-manager-card/main/preview.png)
 
 ## Features
 
@@ -12,9 +12,9 @@ Displays a single Docker container with compact view and expandable stats.
 - Start / Stop / Restart buttons
 - Smart action button: **Check for update** → **Update now** → **Up to date**
 - Expandable detail view: CPU, Memory, Network ↑↓, Health, Started, Image
-- Last update check date and status
 - Step-by-step progress during update
-- Multi-language: auto-detected from HA, or set manually
+- Multi-language: auto-detected from HA, or set manually (`en`, `fr`, `de`, `es`, `nl`)
+- Auto-discovers all entities from Docker Manager — no manual configuration needed
 
 ## Installation via HACS
 
@@ -44,37 +44,10 @@ entity: sensor.nginx_state
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `entity` | string | **required** | State sensor of the container (`sensor.<name>_state`) |
-| `name` | string | auto | Display name (default: derived from entity) |
+| `name` | string | auto | Display name |
 | `language` | string | auto | Override language: `en`, `fr`, `de`, `es`, `nl` |
-
-### Examples
-
-```yaml
-# Auto language (from HA settings)
-type: custom:docker-manager-card
-entity: sensor.nginx_state
-
-# Force French
-type: custom:docker-manager-card
-entity: sensor.zigbee2mqtt_state
-name: Zigbee2MQTT
-language: fr
-
-# Force English
-type: custom:docker-manager-card
-entity: sensor.homeassistant_state
-language: en
-```
-
-## Supported languages
-
-| Code | Language |
-|------|----------|
-| `en` | English (default) |
-| `fr` | Français |
-| `de` | Deutsch |
-| `es` | Español |
-| `nl` | Nederlands |
+| `icon` | string | auto | Custom MDI icon (e.g. `mdi:nginx`) |
+| `icon_color` | string | `#1A73E8` | Icon background color |
 
 ## Requirements
 
