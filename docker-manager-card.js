@@ -5,7 +5,7 @@
  * @version 1.2.0
  */
 
-const CARD_VERSION = "1.2.0";
+const CARD_VERSION = "1.2.1";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -78,10 +78,12 @@ const STYLES = `
     --dmc-border: var(--divider-color, rgba(0,0,0,0.12));
     --dmc-bg2: var(--secondary-background-color, #f5f5f5);
   }
+  ha-card {
+    overflow: hidden;
+    font-family: var(--primary-font-family, Roboto, sans-serif);
+  }
   .card {
-    background: var(--dmc-bg);
-    border-radius: var(--ha-card-border-radius, 12px);
-    border: 1px solid var(--dmc-border);
+    background: transparent;
     overflow: hidden;
     font-family: var(--primary-font-family, Roboto, sans-serif);
   }
@@ -189,7 +191,7 @@ class DockerManagerCard extends HTMLElement {
     const ids  = this._ids || discoverEntities(this._hass, this._config.entity);
 
     if (!ids) {
-      root.innerHTML = `<style>${STYLES}</style><div class="card"><div class="err">${this.t("no_entity")}: ${this._config.entity}</div></div>`;
+      root.innerHTML = `<style>${STYLES}</style><ha-card><div class="card"><div class="err">${this.t("no_entity")}: ${this._config.entity}</div></div></ha-card>`;
       return;
     }
 
@@ -249,6 +251,7 @@ class DockerManagerCard extends HTMLElement {
 
     root.innerHTML = `
       <style>${STYLES}</style>
+      <ha-card>
       <div class="card">
         <div class="hdr" id="hdr">
           <div class="ico" style="background:${iconColor}">${iconHTML}</div>
@@ -293,6 +296,7 @@ class DockerManagerCard extends HTMLElement {
           <div class="updtxt">${lastCheckStr}</div>
         </div>
       </div>
+      </ha-card>
     `;
 
     this._bind(ids, isRunning, updateAvail, neverChecked);
