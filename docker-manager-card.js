@@ -5,7 +5,7 @@
  * @version 1.2.0
  */
 
-const CARD_VERSION = "1.2.1";
+const CARD_VERSION = "1.2.2";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -81,6 +81,7 @@ const STYLES = `
   ha-card {
     overflow: hidden;
     font-family: var(--primary-font-family, Roboto, sans-serif);
+    background: var(--dmc-bg) !important;
   }
   .card {
     background: transparent;
@@ -140,10 +141,36 @@ class DockerManagerCard extends HTMLElement {
     this._config   = {};
     this._hass     = null;
     this._expanded = false;
-    this._updState = "idle"; // idle | checking | just_checked | updating
+    this._updState = "idle";
     this._stepLbl  = "";
     this._lang     = null;
     this._ids      = null;
+    // Watch for card_mod style injection on host element
+    this._styleObserver = new MutationObserver(() => this._syncCardModStyles());
+    this._styleObserver.observe(this, { childList: true, subtree: false });
+  }
+
+  connectedCallback() {
+    this._syncCardModStyles();
+  }
+
+  disconnectedCallback() {
+    this._styleObserver && this._styleObserver.disconnect();
+  }
+
+  /**
+   * card_mod injects a <style> tag directly into the custom element (host).
+   * We forward those styles into our shadow root so they apply inside.
+   */
+  _syncCardModStyles() {
+    const hostStyles = [...this.querySelectorAll("style")];
+    let cardModStyle = this.shadowRoot.getElementById("card-mod-forwarded");
+    if (!cardModStyle) {
+      cardModStyle = document.createElement("style");
+      cardModStyle.id = "card-mod-forwarded";
+      this.shadowRoot.appendChild(cardModStyle);
+    }
+    cardModStyle.textContent = hostStyles.map(s => s.textContent).join("\n");
   }
 
   setConfig(config) {
