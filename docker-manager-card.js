@@ -2,7 +2,10 @@
  * docker-manager-card.js
  * Lovelace custom card for Docker Manager integration
  * https://github.com/jeanphic/ha-docker-manager-card
+ * @version 1.1.0
  */
+
+const CARD_VERSION = "1.1.0";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -79,47 +82,54 @@ function discoverEntities(hass, baseEntity) {
 // Styles
 // ---------------------------------------------------------------------------
 const STYLES = `
-  docker-manager-card { display: block; }
-  docker-manager-card .card { background: var(--card-background-color, #fff); border-radius: var(--ha-card-border-radius, 12px); border: 1px solid var(--divider-color, rgba(0,0,0,0.12)); overflow: hidden; font-family: var(--primary-font-family, sans-serif); }
-  docker-manager-card .header { display: flex; align-items: center; gap: 12px; padding: 14px 16px 0; cursor: pointer; user-select: none; }
-  docker-manager-card .icon-wrap { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  docker-manager-card .name { font-size: 15px; font-weight: 500; color: var(--primary-text-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  docker-manager-card .image-txt { font-size: 11px; color: var(--secondary-text-color); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  docker-manager-card .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 20px; flex-shrink: 0; }
-  docker-manager-card .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  docker-manager-card .running  { background: #EAF3DE; color: #3B6D11; }
-  docker-manager-card .stopped  { background: #FCEBEB; color: #A32D2D; }
-  docker-manager-card .paused   { background: #FAEEDA; color: #854F0B; }
-  docker-manager-card .restarting { background: #E8EAF6; color: #3949AB; }
-  docker-manager-card .dead     { background: #EEEEEE; color: #616161; }
-  docker-manager-card .chevron-btn { margin-left: auto; background: none; border: none; cursor: pointer; color: var(--secondary-text-color); padding: 4px; display: flex; align-items: center; flex-shrink: 0; }
-  docker-manager-card .chevron { transition: transform .2s; }
-  docker-manager-card .chevron.open { transform: rotate(180deg); }
-  docker-manager-card .controls { display: flex; align-items: center; gap: 6px; padding: 10px 16px 14px; }
-  docker-manager-card .btn { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--divider-color, rgba(0,0,0,0.12)); background: var(--card-background-color, #fff); color: var(--primary-text-color); cursor: pointer; transition: filter 0.15s; }
-  docker-manager-card .btn:hover:not(:disabled) { filter: brightness(0.94); }
-  docker-manager-card .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-  docker-manager-card .btn.danger  { border-color: #F09595; color: #A32D2D; }
-  docker-manager-card .btn.success { border-color: #97C459; color: #3B6D11; }
-  docker-manager-card .btn.update-now  { background: #E6F1FB; border-color: #85B7EB; color: #185FA5; }
-  docker-manager-card .btn.up-to-date  { background: #EAF3DE; border-color: #C0DD97; color: #3B6D11; pointer-events: none; }
-  docker-manager-card .btn.busy        { background: var(--secondary-background-color); color: var(--secondary-text-color); pointer-events: none; }
-  docker-manager-card .btn.push-right  { margin-left: auto; }
-  docker-manager-card ha-icon { --mdc-icon-size: 16px; }
-  docker-manager-card hr { border: none; border-top: 1px solid var(--divider-color, rgba(0,0,0,0.08)); margin: 0; }
-  docker-manager-card .details { display: none; flex-direction: column; }
-  docker-manager-card .details.open { display: flex; }
-  docker-manager-card .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 12px 16px; }
-  docker-manager-card .stat { background: var(--secondary-background-color, #f5f5f5); border-radius: 8px; padding: 8px 10px; }
-  docker-manager-card .stat-label { font-size: 11px; color: var(--secondary-text-color); margin-bottom: 3px; }
-  docker-manager-card .stat-value { font-size: 15px; font-weight: 500; color: var(--primary-text-color); }
-  docker-manager-card .stat-unit  { font-size: 11px; color: var(--secondary-text-color); font-weight: 400; }
-  docker-manager-card .info-rows  { display: flex; flex-direction: column; gap: 8px; padding: 0 16px 12px; border-top: 1px solid var(--divider-color, rgba(0,0,0,0.08)); padding-top: 10px; }
-  docker-manager-card .info-row   { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-  docker-manager-card .info-lbl   { color: var(--secondary-text-color); display: flex; align-items: center; gap: 5px; }
-  docker-manager-card .info-val   { color: var(--primary-text-color); font-weight: 500; font-size: 12px; max-width: 60%; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  docker-manager-card .update-detail { padding: 8px 16px 12px; font-size: 11px; color: var(--secondary-text-color); border-top: 1px solid var(--divider-color, rgba(0,0,0,0.08)); }
-  docker-manager-card .error { padding: 16px; color: var(--error-color, red); font-size: 13px; }
+  :host {
+    display: block;
+    --dmc-bg: var(--card-background-color, #fff);
+    --dmc-text: var(--primary-text-color);
+    --dmc-text-secondary: var(--secondary-text-color);
+    --dmc-border: var(--divider-color, rgba(0,0,0,0.12));
+    --dmc-bg-secondary: var(--secondary-background-color, #f5f5f5);
+  }
+  .card { background: var(--dmc-bg); border-radius: var(--ha-card-border-radius, 12px); border: 1px solid var(--dmc-border); overflow: hidden; font-family: var(--primary-font-family, sans-serif); }
+  .header { display: flex; align-items: center; gap: 12px; padding: 14px 16px 0; cursor: pointer; user-select: none; }
+  .icon-wrap { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .name { font-size: 15px; font-weight: 500; color: var(--dmc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .image-txt { font-size: 11px; color: var(--dmc-text-secondary); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 20px; flex-shrink: 0; }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .running { background: #EAF3DE; color: #3B6D11; }
+  .stopped { background: #FCEBEB; color: #A32D2D; }
+  .paused { background: #FAEEDA; color: #854F0B; }
+  .restarting { background: #E8EAF6; color: #3949AB; }
+  .dead { background: #EEEEEE; color: #616161; }
+  .chevron-btn { margin-left: auto; background: none; border: none; cursor: pointer; color: var(--dmc-text-secondary); padding: 4px; display: flex; align-items: center; flex-shrink: 0; }
+  .chevron { transition: transform .2s; }
+  .chevron.open { transform: rotate(180deg); }
+  .controls { display: flex; align-items: center; gap: 6px; padding: 10px 16px 14px; }
+  .btn { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--dmc-border); background: var(--dmc-bg); color: var(--dmc-text); cursor: pointer; transition: filter 0.15s; }
+  .btn:hover:not(:disabled) { filter: brightness(0.94); }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn.danger { border-color: #F09595; color: #A32D2D; }
+  .btn.success { border-color: #97C459; color: #3B6D11; }
+  .btn.update-now { background: #E6F1FB; border-color: #85B7EB; color: #185FA5; }
+  .btn.up-to-date { background: #EAF3DE; border-color: #C0DD97; color: #3B6D11; pointer-events: none; }
+  .btn.busy { background: var(--secondary-background-color); color: var(--dmc-text-secondary); pointer-events: none; }
+  .btn.push-right { margin-left: auto; }
+  ha-icon { --mdc-icon-size: 16px; }
+  hr { border: none; border-top: 1px solid var(--dmc-border); margin: 0; }
+  .details { display: none; flex-direction: column; }
+  .details.open { display: flex; }
+  .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 12px 16px; }
+  .stat { background: var(--dmc-bg-secondary); border-radius: 8px; padding: 8px 10px; }
+  .stat-label { font-size: 11px; color: var(--dmc-text-secondary); margin-bottom: 3px; }
+  .stat-value { font-size: 15px; font-weight: 500; color: var(--dmc-text); }
+  .stat-unit { font-size: 11px; color: var(--dmc-text-secondary); font-weight: 400; }
+  .info-rows { display: flex; flex-direction: column; gap: 8px; padding: 0 16px 12px; border-top: 1px solid var(--dmc-border); padding-top: 10px; }
+  .info-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+  .info-lbl { color: var(--dmc-text-secondary); display: flex; align-items: center; gap: 5px; }
+  .info-val { color: var(--dmc-text); font-weight: 500; font-size: 12px; max-width: 60%; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .update-detail { padding: 8px 16px 12px; font-size: 11px; color: var(--dmc-text-secondary); border-top: 1px solid var(--dmc-border); }
+  .error { padding: 16px; color: var(--error-color, red); font-size: 13px; }
 `;
 
 const WHALE = `<svg viewBox="0 0 24 18" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#fff"><rect x="0" y="0" width="4" height="3" rx="0.5"/><rect x="5" y="0" width="4" height="3" rx="0.5"/><rect x="10" y="0" width="4" height="3" rx="0.5"/><rect x="0" y="4" width="4" height="3" rx="0.5"/><rect x="5" y="4" width="4" height="3" rx="0.5"/><rect x="10" y="4" width="4" height="3" rx="0.5"/><rect x="15" y="4" width="4" height="3" rx="0.5"/><rect x="5" y="8" width="4" height="3" rx="0.5"/><path d="M22,9 C21.5,7 20,6.5 19,7 C18.5,5 17,4 15.5,4.5 C15,3 13.5,2.5 12,3 L12,15 C13,16 20,16 22,13 C23,11.5 22.5,10 22,9 Z"/></svg>`;
@@ -130,7 +140,7 @@ const WHALE = `<svg viewBox="0 0 24 18" xmlns="http://www.w3.org/2000/svg" width
 class DockerManagerCard extends HTMLElement {
   constructor() {
     super();
-    // No shadow DOM — allows card_mod and external CSS to style the card freely
+    this.attachShadow({ mode: "open" });
     this._config = {};
     this._hass = null;
     this._expanded = false;
@@ -141,7 +151,7 @@ class DockerManagerCard extends HTMLElement {
   }
 
   get _root() {
-    return this;
+    return this.shadowRoot;
   }
 
   setConfig(config) {
@@ -257,14 +267,8 @@ class DockerManagerCard extends HTMLElement {
 
     const fmt = v => (v === null || v === undefined || v === "unavailable" || v === "unknown") ? "—" : v;
 
-    // Inject styles once into document head
-    if (!document.getElementById("docker-manager-card-styles")) {
-      const styleEl = document.createElement("style");
-      styleEl.id = "docker-manager-card-styles";
-      styleEl.textContent = STYLES;
-      document.head.appendChild(styleEl);
-    }
     this._root.innerHTML = `
+      <style>${STYLES}</style>
       <div class="card">
         <div class="header" id="hdr">
           <div class="icon-wrap" style="background:${iconColor}">${iconHTML}</div>
@@ -381,3 +385,9 @@ window.customCards.push({
   preview: false,
   documentationURL: "https://github.com/jeanphic/ha-docker-manager-card",
 });
+
+console.info(
+  `%c DOCKER-MANAGER-CARD %c v${CARD_VERSION} `,
+  "background:#1A73E8;color:white;padding:2px 4px;border-radius:3px 0 0 3px;font-weight:bold",
+  "background:#424242;color:white;padding:2px 4px;border-radius:0 3px 3px 0"
+);
