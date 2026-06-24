@@ -5,7 +5,7 @@
  * @version 1.2.0
  */
 
-const CARD_VERSION = "1.2.2";
+const CARD_VERSION = "1.2.3";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -27,42 +27,60 @@ function getLang(lang) {
 // Entity discovery
 // ---------------------------------------------------------------------------
 function discoverEntities(hass, baseEntity) {
-  const match = baseEntity.match(/^sensor\.(.+)_state$/);
+  // Accept sensor.xxx_state OR sensor.xxx_state_2 (HA adds _2 when name conflicts)
+  const match = baseEntity.match(/^sensor\.(.+?)_state(?:_\d+)?$/);
   if (!match) return null;
-  const prefix = match[1];
+
   const states = hass.states;
+  if (!states[baseEntity]) return null;
+
+  const prefix = match[1]; // e.g. "speedtest_tracker"
+
+  // Helper: find best entity for domain+suffix, handles _2/_3 HA variants
+  const find = (domain, suffix) => {
+    const exact = domain + "." + prefix + "_" + suffix;
+    if (states[exact]) return exact;
+    // Try numbered variants (_2, _3...)
+    const numbered = Object.keys(states).find(id =>
+      id.startsWith(domain + "." + prefix + "_" + suffix + "_") &&
+      /^\d+$/.test(id.split("_").pop())
+    );
+    return numbered || exact;
+  };
+
+  // Resolve state entity — use the one the user provided directly
+  const stateEntity = baseEntity;
 
   // Find memory MB vs % — check unit_of_measurement
-  const memId  = `sensor.${prefix}_memory`;
-  const mem2Id = `sensor.${prefix}_memory_2`;
-  let memMb = memId, memPct = mem2Id;
+  let memMb  = find("sensor", "memory");
+  let memPct = find("sensor", "memory_2");
 
-  const memState = states[memId];
+  const memState = states[memMb];
   if (memState && memState.attributes.unit_of_measurement === "%") {
-    memMb = mem2Id; memPct = memId;
+    [memMb, memPct] = [memPct, memMb];
   }
   if (!states[memPct]) {
     const found = Object.keys(states).find(id =>
-      id.startsWith(`sensor.${prefix}_memory`) &&
-      states[id].attributes.unit_of_measurement === "%"
+      id.startsWith("sensor." + prefix + "_memory") &&
+      states[id] && states[id].attributes.unit_of_measurement === "%"
     );
     if (found) memPct = found;
   }
 
   return {
-    state:       `sensor.${prefix}_state`,
-    image:       `sensor.${prefix}_image`,
-    cpu:         `sensor.${prefix}_cpu`,
+    state:       stateEntity,
+    image:       find("sensor", "image"),
+    cpu:         find("sensor", "cpu"),
     memory:      memMb,
     memory_pct:  memPct,
-    net_up:      `sensor.${prefix}_network_up`,
-    net_down:    `sensor.${prefix}_network_down`,
-    health:      `sensor.${prefix}_health`,
-    started:     `sensor.${prefix}_started_at`,
-    sw:          `switch.${prefix}_container`,
-    restart_btn: `button.${prefix}_restart`,
-    check_btn:   `button.${prefix}_check_for_update`,
-    update:      `update.${prefix}_update`,
+    net_up:      find("sensor", "network_up"),
+    net_down:    find("sensor", "network_down"),
+    health:      find("sensor", "health"),
+    started:     find("sensor", "started_at"),
+    sw:          find("switch", "container"),
+    restart_btn: find("button", "restart"),
+    check_btn:   find("button", "check_for_update"),
+    update:      find("update", "update"),
   };
 }
 
@@ -218,7 +236,8 @@ class DockerManagerCard extends HTMLElement {
     const ids  = this._ids || discoverEntities(this._hass, this._config.entity);
 
     if (!ids) {
-      root.innerHTML = `<style>${STYLES}</style><ha-card><div class="card"><div class="err">${this.t("no_entity")}: ${this._config.entity}</div></div></ha-card>`;
+      root.innerHTML = `<style id="dmc-base-styles">${STYLES}</style><div id="dmc-container"><ha-card><div class="card"><div class="err">${this.t("no_entity")}: ${this._config.entity}</div></div></ha-card></div>`;
+      this._syncCardModStyles();
       return;
     }
 
@@ -276,8 +295,21 @@ class DockerManagerCard extends HTMLElement {
     const ssLbl = isRunning ? this.t("stop") : this.t("start");
     const ssCls = isRunning ? "btn danger" : "btn success";
 
-    root.innerHTML = `
-      <style>${STYLES}</style>
+    // Keep forwarded card_mod styles — only update the card container
+    let cardModStyle = root.getElementById("card-mod-forwarded");
+    if (!cardModStyle) {
+      cardModStyle = document.createElement("style");
+      cardModStyle.id = "card-mod-forwarded";
+    }
+    let container = root.getElementById("dmc-container");
+    if (!container) {
+      root.innerHTML = `<style id="dmc-base-styles">${STYLES}</style><div id="dmc-container"></div>`;
+      root.appendChild(cardModStyle);
+      container = root.getElementById("dmc-container");
+      // Re-sync card_mod styles after full reset
+      this._syncCardModStyles();
+    }
+    container.innerHTML = `
       <ha-card>
       <div class="card">
         <div class="hdr" id="hdr">
