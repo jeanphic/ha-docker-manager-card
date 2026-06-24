@@ -121,6 +121,7 @@ const STYLES = `
 	--dmc-icon-paused:     #FB8C00;
 	--dmc-icon-restarting: #3949AB;
 	--dmc-icon-dead:       #757575;
+	
 	/* Bordure de carte */
 	--dmc-border-running:    #43A047;
 	--dmc-border-stopped:    #E53935;
@@ -134,21 +135,22 @@ const STYLES = `
 	--dmc-metric-danger:  #E53935;
   }
   ha-card { overflow: hidden; font-family: var(--primary-font-family, Roboto, sans-serif); border-radius: var(--dmc-radius); }
-  .card   { background: var(--dmc-bg); border-color: 4px solid transparent; }
-  .card.running { border-color: var(--dmc-border-running); }
-  .card.stopped { border-color: var(--dmc-border-stopped); }
-  .card.paused { border-color: var(--dmc-border-paused); }
-  .card.restarting { border-color: var(--dmc-border-restarting); }
-  .card.dead { border-color: var(--dmc-border-dead); }
+  .card   { background: var(--dmc-bg); border-left: 4px solid transparent; }
+  .card.running { border-left-color: var(--dmc-border-running); }
+  .card.stopped { border-left-color: var(--dmc-border-stopped); }
+  .card.paused { border-left-color: var(--dmc-border-paused); }
+  .card.restarting { border-left-color: var(--dmc-border-restarting); }
+  .card.dead { border-left-color: var(--dmc-border-dead); }
   .hdr    { display:flex; align-items:center; gap:12px; padding:14px 16px 0; cursor:pointer; user-select:none; }
   .ico    { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .ico.restarting-spin {
 	  animation: dmc-spin 1s linear infinite;
   }
+  
   @keyframes dmc-spin {
 	from { transform: rotate(0deg); }
 	to   { transform: rotate(360deg); }
-	}
+  }
   .cname  { font-size:15px; font-weight:500; color:var(--dmc-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .cimage { font-size:11px; color:var(--dmc-text2); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .badge  { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500; padding:3px 8px; border-radius:20px; flex-shrink:0; }
