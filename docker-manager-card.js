@@ -5,7 +5,7 @@
  * @version 1.4.0
  */
 
-const CARD_VERSION = "1.4.5";
+const CARD_VERSION = "1.4.6";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -414,13 +414,20 @@ class DockerManagerCard extends HTMLElement {
     set("badge-lbl", this.t(state) || state);
 
 	// Dynamic icon color
-	const iconEl = ico.querySelector("ha-icon");
+	const ico = r.getElementById("ico");
 
-	if (iconEl) {
-		iconEl.classList.toggle(
-			"restarting-spin",
-			state === "restarting"
-		);
+	if (ico) {
+		ico.style.background =
+			stateColors[state] || stateColors.dead;
+
+		const iconEl = ico.querySelector("ha-icon");
+
+		if (iconEl) {
+			iconEl.classList.toggle(
+				"restarting-spin",
+				state === "restarting"
+			);	
+		}
 	}
 	
 	//Card border-color
