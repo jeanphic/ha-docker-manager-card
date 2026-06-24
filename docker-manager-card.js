@@ -5,7 +5,7 @@
  * @version 1.2.0
  */
 
-const CARD_VERSION = "1.2.3";
+const CARD_VERSION = "1.3.0";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -82,6 +82,33 @@ function discoverEntities(hass, baseEntity) {
     check_btn:   find("button", "check_for_update"),
     update:      find("update", "update"),
   };
+}
+
+/**
+ * Apply manual entity overrides from config.
+ * Any entity_xxx key in config overrides the auto-discovered value.
+ */
+function applyOverrides(ids, config) {
+  const map = {
+    entity_state:        "state",
+    entity_image:        "image",
+    entity_cpu:          "cpu",
+    entity_memory:       "memory",
+    entity_memory_pct:   "memory_pct",
+    entity_net_up:       "net_up",
+    entity_net_down:     "net_down",
+    entity_health:       "health",
+    entity_started:      "started",
+    entity_switch:       "sw",
+    entity_restart:      "restart_btn",
+    entity_check_update: "check_btn",
+    entity_update:       "update",
+  };
+  const result = { ...ids };
+  for (const [cfgKey, idKey] of Object.entries(map)) {
+    if (config[cfgKey]) result[idKey] = config[cfgKey];
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,13 +222,18 @@ class DockerManagerCard extends HTMLElement {
     if (!config.entity) throw new Error("docker-manager-card: 'entity' is required (e.g. sensor.mycontainer_state)");
     this._config = config;
     if (config.language) this._lang = getLang(config.language);
+    // Reset ids so they are re-discovered with new config + overrides applied
+    this._ids = null;
     this._render();
   }
 
   set hass(hass) {
     this._hass = hass;
     if (!this._lang) this._lang = getLang(hass.language);
-    if (!this._ids)  this._ids  = discoverEntities(hass, this._config.entity);
+    if (!this._ids) {
+      const discovered = discoverEntities(hass, this._config.entity);
+      this._ids = discovered ? applyOverrides(discovered, this._config) : null;
+    }
     this._render();
   }
 
@@ -420,7 +452,17 @@ class DockerManagerCard extends HTMLElement {
   getCardSize() { return this._expanded ? 5 : 2; }
 
   static getStubConfig() {
-    return { entity: "sensor.mycontainer_state" };
+    return {
+      entity: "sensor.mycontainer_state",
+      // Optional overrides — uncomment and set if entities were renamed in HA:
+      // entity_switch: "switch.mycontainer_container",
+      // entity_restart: "button.mycontainer_restart",
+      // entity_check_update: "button.mycontainer_check_for_update",
+      // entity_update: "update.mycontainer_update",
+      // entity_cpu: "sensor.mycontainer_cpu",
+      // entity_memory: "sensor.mycontainer_memory",
+      // entity_memory_pct: "sensor.mycontainer_memory_2",
+    };
   }
 }
 
