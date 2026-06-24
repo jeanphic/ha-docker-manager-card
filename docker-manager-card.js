@@ -5,7 +5,7 @@
  * @version 1.4.0
  */
 
-const CARD_VERSION = "1.4.1";
+const CARD_VERSION = "1.4.2";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -90,60 +90,61 @@ const STYLES = `
   :host {
     display: block;
     /* Base variables — override with card_mod */
-    --dmc-bg:            var(--card-background-color, #fff);
+    --dmc-bg:            rgba(var(--rgb-primary-text-color), 0.25) !important;
     --dmc-text:          var(--primary-text-color, #212121);
     --dmc-text2:         var(--secondary-text-color, #757575);
     --dmc-border:        var(--divider-color, rgba(0,0,0,0.12));
     --dmc-bg2:           var(--secondary-background-color, #f5f5f5);
     --dmc-radius:        var(--ha-card-border-radius, 12px);
     /* Button color variables */
-    --dmc-btn-stop-bg:        transparent;
-    --dmc-btn-stop-color:     #A32D2D;
-    --dmc-btn-stop-border:    #F09595;
-    --dmc-btn-start-bg:       transparent;
+    --dmc-btn-stop-bg:        rgba(30,40,60,1);
+    --dmc-btn-stop-color:     var(--primary-text-color);
+    --dmc-btn-stop-border:    rgba(30,40,60,1);
+    --dmc-btn-start-bg:       rgba(30,40,60,1);
     --dmc-btn-start-color:    #3B6D11;
-    --dmc-btn-start-border:   #97C459;
-    --dmc-btn-restart-bg:     transparent;
+    --dmc-btn-start-border:   rgba(30,40,60,1);
+    --dmc-btn-restart-bg:     rgba(30,40,60,1);
     --dmc-btn-restart-color:  var(--dmc-text);
     --dmc-btn-restart-border: var(--dmc-border);
-    --dmc-btn-check-bg:       transparent;
+    --dmc-btn-check-bg:       rgba(30,40,60,1);
     --dmc-btn-check-color:    var(--dmc-text);
-    --dmc-btn-check-border:   var(--dmc-border);
+    --dmc-btn-check-border:   rgba(30,40,60,1);
     --dmc-btn-update-bg:      #E6F1FB;
     --dmc-btn-update-color:   #185FA5;
     --dmc-btn-update-border:  #85B7EB;
-    --dmc-btn-uptd-bg:        #EAF3DE;
+    --dmc-btn-uptd-bg:        rgba(30,40,60,1);
     --dmc-btn-uptd-color:     #3B6D11;
-    --dmc-btn-uptd-border:    #C0DD97;
+    --dmc-btn-uptd-border:    rgba(30,40,60,1);
 	/* Couleurs dynamiques des icônes */
 	--dmc-icon-running:    #43A047;
 	--dmc-icon-stopped:    #E53935;
 	--dmc-icon-paused:     #FB8C00;
 	--dmc-icon-restarting: #3949AB;
 	--dmc-icon-dead:       #757575;
-
-	/* Bordure de carte */	
+	/* Bordure de carte */
 	--dmc-border-running:    #43A047;
 	--dmc-border-stopped:    #E53935;
 	--dmc-border-paused:     #FB8C00;
 	--dmc-border-restarting: #3949AB;
 	--dmc-border-dead:       #757575;
-
+	
 	/* Seuils CPU/Mémoire */
 	--dmc-metric-ok:      #43A047;
 	--dmc-metric-warning: #FB8C00;
 	--dmc-metric-danger:  #E53935;
   }
   ha-card { overflow: hidden; font-family: var(--primary-font-family, Roboto, sans-serif); border-radius: var(--dmc-radius); }
-  .card   { background: var(--dmc-bg); border-left: 4px solid transparent; }
-  .card.running { border-left-color: var(--dmc-border-running); }
-  .card.stopped { border-left-color: var(--dmc-border-stopped); }
-  .card.paused { border-left-color: var(--dmc-border-paused); }
-  .card.restarting { border-left-color: var(--dmc-border-restarting); }
-  .card.dead { border-left-color: var(--dmc-border-dead); }
+  .card   { background: var(--dmc-bg); border-color: 4px solid transparent; }
+  .card.running { border-color: var(--dmc-border-running); }
+  .card.stopped { border-color: var(--dmc-border-stopped); }
+  .card.paused { border-color: var(--dmc-border-paused); }
+  .card.restarting { border-color: var(--dmc-border-restarting); }
+  .card.dead { border-color: var(--dmc-border-dead); }
   .hdr    { display:flex; align-items:center; gap:12px; padding:14px 16px 0; cursor:pointer; user-select:none; }
   .ico    { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .ico.restarting-spin { animation: dmc-spin 1s linear infinite; }
+  .ico.restarting-spin {
+	  animation: dmc-spin 1s linear infinite;
+  }
   @keyframes dmc-spin {
 	from { transform: rotate(0deg); }
 	to   { transform: rotate(360deg); }
