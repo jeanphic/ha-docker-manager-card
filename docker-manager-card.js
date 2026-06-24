@@ -5,7 +5,7 @@
  * @version 1.4.0
  */
 
-const CARD_VERSION = "1.4.4";
+const CARD_VERSION = "1.4.5";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -130,9 +130,9 @@ const STYLES = `
 	--dmc-border-dead:       #757575;
 	
 	/* Seuils CPU/Mémoire */
-	--dmc-metric-ok:      #43A047;
-	--dmc-metric-warning: #FB8C00;
-	--dmc-metric-danger:  #E53935;
+	--dmc-metric-ok:      #00C853;
+	--dmc-metric-warning: #FF9100;
+	--dmc-metric-danger:  #D50000;
   }
   ha-card { overflow: hidden; font-family: var(--primary-font-family, Roboto, sans-serif); border-radius: var(--dmc-radius); }
   .card   { background: var(--dmc-bg); border-left: 5px solid transparent; }
@@ -143,7 +143,7 @@ const STYLES = `
   .card.dead { border-left-color: var(--dmc-border-dead); }
   .hdr    { display:flex; align-items:center; gap:12px; padding:14px 16px 0; cursor:pointer; user-select:none; }
   .ico    { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .ico.restarting-spin { animation: dmc-spin 1s linear infinite; }
+  .restarting-spin { animation: dmc-spin 1s linear infinite; }
   
   @keyframes dmc-spin {
 	from { transform: rotate(0deg); }
@@ -153,11 +153,11 @@ const STYLES = `
   .cimage { font-size:11px; color:var(--dmc-text2); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .badge  { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500; padding:3px 8px; border-radius:20px; flex-shrink:0; }
   .dot    { width:6px; height:6px; border-radius:50%; background:currentColor; }
-  .running    { background:#EAF3DE; color:#3B6D11; }
-  .stopped    { background:#FCEBEB; color:#A32D2D; }
-  .paused     { background:#FAEEDA; color:#854F0B; }
-  .restarting { background:#E8EAF6; color:#3949AB; }
-  .dead       { background:#EEEEEE; color:#616161; }
+  .badge.running    { background:#EAF3DE; color:#3B6D11; }
+  .badge.stopped    { background:#FCEBEB; color:#A32D2D; }
+  .badge.paused     { background:#FAEEDA; color:#854F0B; }
+  .badge.restarting { background:#E8EAF6; color:#3949AB; }
+  .badge.dead       { background:#EEEEEE; color:#616161; }
   .chevbtn { margin-left:auto; background:none; border:none; cursor:pointer; color:var(--dmc-text2); padding:4px; display:flex; align-items:center; flex-shrink:0; }
   .chev    { transition:transform .2s; }
   .chev.open { transform:rotate(180deg); }
@@ -365,7 +365,9 @@ class DockerManagerCard extends HTMLElement {
     const setClass = (id, cls) => { const el = r.getElementById(id); if (el && el.className !== cls) el.className = cls; };
     const setAttr = (id, attr, val) => { const el = r.getElementById(id); if (el) el[attr] = val; };
 
-    const state      = this._s(ids.state) || "unknown";
+    const rawState = this._s(ids.state) || "unknown";
+	const state = rawState.toLowerCase().trim();
+	console.log("Docker state =", state);
 	const style = getComputedStyle(this);
 	
 	const stateColors = {
@@ -412,13 +414,10 @@ class DockerManagerCard extends HTMLElement {
     set("badge-lbl", this.t(state) || state);
 
 	// Dynamic icon color
-	const ico = r.getElementById("ico");
+	const iconEl = ico.querySelector("ha-icon");
 
-	if (ico) {
-		ico.style.background =
-			stateColors[state] || stateColors.dead;
-
-		ico.classList.toggle(
+	if (iconEl) {
+		iconEl.classList.toggle(
 			"restarting-spin",
 			state === "restarting"
 		);
