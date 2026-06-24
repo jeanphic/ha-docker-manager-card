@@ -5,7 +5,7 @@
  * @version 1.4.0
  */
 
-const CARD_VERSION = "1.4.7";
+const CARD_VERSION = "1.4.8";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -365,34 +365,26 @@ class DockerManagerCard extends HTMLElement {
     const setClass = (id, cls) => { const el = r.getElementById(id); if (el && el.className !== cls) el.className = cls; };
     const setAttr = (id, attr, val) => { const el = r.getElementById(id); if (el) el[attr] = val; };
 
-    const rawState = this._s(ids.state) || "unknown";
-	
+//    const rawState = this._s(ids.state) || "unknown";
+//    const state = rawState.toLowerCase().trim();
+
+	const rawState = this._s(ids.state) || "unknown";
+
 	let state = rawState.toLowerCase().trim();
-	
+
 	if (state === "exited")
 		state = "stopped";
-	const state = rawState.toLowerCase().trim();
-	// console.log("Docker state =", state);
+
+	console.log("Docker state =", state);
 	const style = getComputedStyle(this);
 	
 	const stateColors = {
 	  running: style.getPropertyValue("--dmc-icon-running").trim(),
       stopped: style.getPropertyValue("--dmc-icon-stopped").trim(),
+      paused: style.getPropertyValue("--dmc-icon-paused").trim(),
+      restarting: style.getPropertyValue("--dmc-icon-restarting").trim(),
+      dead: style.getPropertyValue("--dmc-icon-dead").trim(),
     };
-	// Dynamic icon color
-	const ico = r.getElementById("ico");
-	
-	if (ico) {
-		ico.style.background =
-			stateColors[state] || stateColors.stopped;
-	}
-	if (ico) {
-		ico.classList.toggle(
-			"restarting-spin",
-			rawState.toLowerCase().includes("restart")
-		);
-	}
-	
 	
     const image      = this._s(ids.image) || "";
     const cpu        = this._fmt(this._s(ids.cpu));
@@ -428,7 +420,36 @@ class DockerManagerCard extends HTMLElement {
     // Badge
     setClass("badge", `badge ${state}`);
     set("badge-lbl", this.t(state) || state);
-	
+
+	// Dynamic icon color
+	const ico = r.getElementById("ico");
+
+	if (ico) {
+		ico.style.background =
+			stateColors[state] || stateColors.dead;
+
+/*		const iconEl = ico.querySelector("ha-icon");
+
+		if (iconEl) {
+			iconEl.classList.toggle(
+				"restarting-spin",
+				state === "restarting"
+			);	
+		}
+	}
+*/
+		const ico = r.getElementById("ico");
+
+		if (ico) {
+			ico.style.background =
+				stateColors[state] || stateColors.stopped;
+
+			ico.classList.toggle(
+				"restarting-spin",
+				rawState.toLowerCase().includes("restart")
+			);
+		}
+		
 	//Card border-color
 	const card = r.querySelector(".card");
 
@@ -441,13 +462,20 @@ class DockerManagerCard extends HTMLElement {
 			"dead"
 		);
 
+/*		card.classList.add(
+			["running","stopped","paused","restarting","dead"]
+				.includes(state)
+				? state
+				: "dead"
+		);
+	}
+*/
 		card.classList.add(
 			state === "running"
 				? "running"
-				: "stopped"
+			: "stopped"
 		);
-	}
-
+    }
 	// CPU & Memory color
 	const metricColor = (value) => {
 		const v = parseFloat(value);
