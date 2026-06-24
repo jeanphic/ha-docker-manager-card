@@ -5,7 +5,7 @@
  * @version 1.4.0
  */
 
-const CARD_VERSION = "1.4.3";
+const CARD_VERSION = "1.4.4";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -123,8 +123,8 @@ const STYLES = `
 	--dmc-icon-dead:       #757575;
 	
 	/* Bordure de carte */
-	--dmc-border-running:    #43A047;
-	--dmc-border-stopped:    #E53935;
+	--dmc-border-running:    #6495ED;
+	--dmc-border-stopped:    #DC143C;
 	--dmc-border-paused:     #FB8C00;
 	--dmc-border-restarting: #3949AB;
 	--dmc-border-dead:       #757575;
@@ -135,7 +135,7 @@ const STYLES = `
 	--dmc-metric-danger:  #E53935;
   }
   ha-card { overflow: hidden; font-family: var(--primary-font-family, Roboto, sans-serif); border-radius: var(--dmc-radius); }
-  .card   { background: var(--dmc-bg); border-left: 4px solid transparent; }
+  .card   { background: var(--dmc-bg); border-left: 5px solid transparent; }
   .card.running { border-left-color: var(--dmc-border-running); }
   .card.stopped { border-left-color: var(--dmc-border-stopped); }
   .card.paused { border-left-color: var(--dmc-border-paused); }
@@ -143,9 +143,7 @@ const STYLES = `
   .card.dead { border-left-color: var(--dmc-border-dead); }
   .hdr    { display:flex; align-items:center; gap:12px; padding:14px 16px 0; cursor:pointer; user-select:none; }
   .ico    { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .ico.restarting-spin {
-	  animation: dmc-spin 1s linear infinite;
-  }
+  .ico.restarting-spin { animation: dmc-spin 1s linear infinite; }
   
   @keyframes dmc-spin {
 	from { transform: rotate(0deg); }
