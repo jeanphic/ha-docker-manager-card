@@ -2,10 +2,10 @@
  * docker-manager-card.js
  * Lovelace custom card for Docker Manager integration
  * https://github.com/jeanphic/ha-docker-manager-card
- * @version 1.2.0
+ * @version 1.4.0
  */
 
-const CARD_VERSION = "1.3.0";
+const CARD_VERSION = "1.4.0";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -27,149 +27,137 @@ function getLang(lang) {
 // Entity discovery
 // ---------------------------------------------------------------------------
 function discoverEntities(hass, baseEntity) {
-  // Accept sensor.xxx_state OR sensor.xxx_state_2 (HA adds _2 when name conflicts)
   const match = baseEntity.match(/^sensor\.(.+?)_state(?:_\d+)?$/);
   if (!match) return null;
-
   const states = hass.states;
   if (!states[baseEntity]) return null;
+  const prefix = match[1];
 
-  const prefix = match[1]; // e.g. "speedtest_tracker"
-
-  // Helper: find best entity for domain+suffix, handles _2/_3 HA variants
   const find = (domain, suffix) => {
-    const exact = domain + "." + prefix + "_" + suffix;
+    const exact = `${domain}.${prefix}_${suffix}`;
     if (states[exact]) return exact;
-    // Try numbered variants (_2, _3...)
-    const numbered = Object.keys(states).find(id =>
-      id.startsWith(domain + "." + prefix + "_" + suffix + "_") &&
+    const found = Object.keys(states).find(id =>
+      id.startsWith(`${domain}.${prefix}_${suffix}_`) &&
       /^\d+$/.test(id.split("_").pop())
     );
-    return numbered || exact;
+    return found || exact;
   };
 
-  // Resolve state entity — use the one the user provided directly
-  const stateEntity = baseEntity;
-
-  // Find memory MB vs % — check unit_of_measurement
-  let memMb  = find("sensor", "memory");
+  let memMb = find("sensor", "memory");
   let memPct = find("sensor", "memory_2");
-
   const memState = states[memMb];
   if (memState && memState.attributes.unit_of_measurement === "%") {
     [memMb, memPct] = [memPct, memMb];
   }
   if (!states[memPct]) {
     const found = Object.keys(states).find(id =>
-      id.startsWith("sensor." + prefix + "_memory") &&
-      states[id] && states[id].attributes.unit_of_measurement === "%"
+      id.startsWith(`sensor.${prefix}_memory`) &&
+      states[id]?.attributes.unit_of_measurement === "%"
     );
     if (found) memPct = found;
   }
 
   return {
-    state:       stateEntity,
-    image:       find("sensor", "image"),
-    cpu:         find("sensor", "cpu"),
-    memory:      memMb,
-    memory_pct:  memPct,
-    net_up:      find("sensor", "network_up"),
-    net_down:    find("sensor", "network_down"),
-    health:      find("sensor", "health"),
-    started:     find("sensor", "started_at"),
-    sw:          find("switch", "container"),
-    restart_btn: find("button", "restart"),
-    check_btn:   find("button", "check_for_update"),
-    update:      find("update", "update"),
+    state: baseEntity, image: find("sensor","image"), cpu: find("sensor","cpu"),
+    memory: memMb, memory_pct: memPct,
+    net_up: find("sensor","network_up"), net_down: find("sensor","network_down"),
+    health: find("sensor","health"), started: find("sensor","started_at"),
+    sw: find("switch","container"), restart_btn: find("button","restart"),
+    check_btn: find("button","check_for_update"), update: find("update","update"),
   };
 }
 
-/**
- * Apply manual entity overrides from config.
- * Any entity_xxx key in config overrides the auto-discovered value.
- */
 function applyOverrides(ids, config) {
   const map = {
-    entity_state:        "state",
-    entity_image:        "image",
-    entity_cpu:          "cpu",
-    entity_memory:       "memory",
-    entity_memory_pct:   "memory_pct",
-    entity_net_up:       "net_up",
-    entity_net_down:     "net_down",
-    entity_health:       "health",
-    entity_started:      "started",
-    entity_switch:       "sw",
-    entity_restart:      "restart_btn",
-    entity_check_update: "check_btn",
-    entity_update:       "update",
+    entity_state:"state", entity_image:"image", entity_cpu:"cpu",
+    entity_memory:"memory", entity_memory_pct:"memory_pct",
+    entity_net_up:"net_up", entity_net_down:"net_down",
+    entity_health:"health", entity_started:"started", entity_image:"image",
+    entity_switch:"sw", entity_restart:"restart_btn",
+    entity_check_update:"check_btn", entity_update:"update",
   };
   const result = { ...ids };
-  for (const [cfgKey, idKey] of Object.entries(map)) {
-    if (config[cfgKey]) result[idKey] = config[cfgKey];
+  for (const [k, v] of Object.entries(map)) {
+    if (config[k]) result[v] = config[k];
   }
   return result;
 }
 
 // ---------------------------------------------------------------------------
-// Styles
+// Styles — expose CSS variables for card_mod customization
 // ---------------------------------------------------------------------------
 const STYLES = `
   :host {
     display: block;
-    --dmc-bg: var(--card-background-color, #fff);
-    --dmc-text: var(--primary-text-color, #212121);
-    --dmc-text2: var(--secondary-text-color, #757575);
-    --dmc-border: var(--divider-color, rgba(0,0,0,0.12));
-    --dmc-bg2: var(--secondary-background-color, #f5f5f5);
+    /* Base variables — override with card_mod */
+    --dmc-bg:            var(--card-background-color, #fff);
+    --dmc-text:          var(--primary-text-color, #212121);
+    --dmc-text2:         var(--secondary-text-color, #757575);
+    --dmc-border:        var(--divider-color, rgba(0,0,0,0.12));
+    --dmc-bg2:           var(--secondary-background-color, #f5f5f5);
+    --dmc-radius:        var(--ha-card-border-radius, 12px);
+    /* Button color variables */
+    --dmc-btn-stop-bg:        transparent;
+    --dmc-btn-stop-color:     #A32D2D;
+    --dmc-btn-stop-border:    #F09595;
+    --dmc-btn-start-bg:       transparent;
+    --dmc-btn-start-color:    #3B6D11;
+    --dmc-btn-start-border:   #97C459;
+    --dmc-btn-restart-bg:     transparent;
+    --dmc-btn-restart-color:  var(--dmc-text);
+    --dmc-btn-restart-border: var(--dmc-border);
+    --dmc-btn-check-bg:       transparent;
+    --dmc-btn-check-color:    var(--dmc-text);
+    --dmc-btn-check-border:   var(--dmc-border);
+    --dmc-btn-update-bg:      #E6F1FB;
+    --dmc-btn-update-color:   #185FA5;
+    --dmc-btn-update-border:  #85B7EB;
+    --dmc-btn-uptd-bg:        #EAF3DE;
+    --dmc-btn-uptd-color:     #3B6D11;
+    --dmc-btn-uptd-border:    #C0DD97;
   }
-  ha-card {
-    overflow: hidden;
-    font-family: var(--primary-font-family, Roboto, sans-serif);
-    background: var(--dmc-bg) !important;
-  }
-  .card {
-    background: transparent;
-    overflow: hidden;
-    font-family: var(--primary-font-family, Roboto, sans-serif);
-  }
-  .hdr { display:flex; align-items:center; gap:12px; padding:14px 16px 0; cursor:pointer; user-select:none; }
-  .ico { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .cname { font-size:15px; font-weight:500; color:var(--dmc-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  ha-card { overflow: hidden; font-family: var(--primary-font-family, Roboto, sans-serif); border-radius: var(--dmc-radius); }
+  .card   { background: var(--dmc-bg); }
+  .hdr    { display:flex; align-items:center; gap:12px; padding:14px 16px 0; cursor:pointer; user-select:none; }
+  .ico    { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .cname  { font-size:15px; font-weight:500; color:var(--dmc-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .cimage { font-size:11px; color:var(--dmc-text2); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500; padding:3px 8px; border-radius:20px; flex-shrink:0; }
-  .dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
-  .running  { background:#EAF3DE; color:#3B6D11; }
-  .stopped  { background:#FCEBEB; color:#A32D2D; }
-  .paused   { background:#FAEEDA; color:#854F0B; }
+  .badge  { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500; padding:3px 8px; border-radius:20px; flex-shrink:0; }
+  .dot    { width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .running    { background:#EAF3DE; color:#3B6D11; }
+  .stopped    { background:#FCEBEB; color:#A32D2D; }
+  .paused     { background:#FAEEDA; color:#854F0B; }
   .restarting { background:#E8EAF6; color:#3949AB; }
-  .dead     { background:#EEEEEE; color:#616161; }
+  .dead       { background:#EEEEEE; color:#616161; }
   .chevbtn { margin-left:auto; background:none; border:none; cursor:pointer; color:var(--dmc-text2); padding:4px; display:flex; align-items:center; flex-shrink:0; }
-  .chev { transition:transform .2s; }
+  .chev    { transition:transform .2s; }
   .chev.open { transform:rotate(180deg); }
-  .ctrls { display:flex; align-items:center; gap:6px; padding:10px 16px 14px; }
-  .btn { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:500; padding:5px 10px; border-radius:6px; border:1px solid var(--dmc-border); background:var(--dmc-bg); color:var(--dmc-text); cursor:pointer; transition:filter 0.15s; white-space:nowrap; }
+  .ctrls   { display:flex; align-items:center; gap:6px; padding:10px 16px 14px; }
+  .btn     { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:500; padding:5px 10px; border-radius:6px; border:1px solid var(--dmc-border); background:var(--dmc-bg); color:var(--dmc-text); cursor:pointer; transition:filter 0.15s; white-space:nowrap; }
   .btn:hover:not([disabled]) { filter:brightness(0.92); }
-  .btn[disabled] { opacity:0.55; cursor:not-allowed; }
-  .btn.danger { border-color:#F09595; color:#A32D2D; }
-  .btn.success { border-color:#97C459; color:#3B6D11; }
-  .btn.upnow { background:#E6F1FB; border-color:#85B7EB; color:#185FA5; }
-  .btn.uptd { background:#EAF3DE; border-color:#C0DD97; color:#3B6D11; pointer-events:none; }
-  .btn.busy { background:var(--dmc-bg2); color:var(--dmc-text2); pointer-events:none; }
-  .btn.ml { margin-left:auto; }
+  .btn[disabled]  { opacity:0.55; cursor:not-allowed; }
+  /* Individual button styles using CSS variables */
+  .btn.danger  { background:var(--dmc-btn-stop-bg);    color:var(--dmc-btn-stop-color);    border-color:var(--dmc-btn-stop-border); }
+  .btn.success { background:var(--dmc-btn-start-bg);   color:var(--dmc-btn-start-color);   border-color:var(--dmc-btn-start-border); }
+  .btn.rst     { background:var(--dmc-btn-restart-bg); color:var(--dmc-btn-restart-color); border-color:var(--dmc-btn-restart-border); }
+  .btn.chk     { background:var(--dmc-btn-check-bg);   color:var(--dmc-btn-check-color);   border-color:var(--dmc-btn-check-border); }
+  .btn.upnow   { background:var(--dmc-btn-update-bg);  color:var(--dmc-btn-update-color);  border-color:var(--dmc-btn-update-border); }
+  .btn.uptd    { background:var(--dmc-btn-uptd-bg);    color:var(--dmc-btn-uptd-color);    border-color:var(--dmc-btn-uptd-border); pointer-events:none; }
+  .btn.busy    { background:var(--dmc-bg2); color:var(--dmc-text2); pointer-events:none; }
+  .btn.ml      { margin-left:auto; }
   ha-icon { --mdc-icon-size:16px; }
-  .sep { border:none; border-top:1px solid var(--dmc-border); margin:0; }
-  .det { display:none; flex-direction:column; }
+  .sep  { border:none; border-top:1px solid var(--dmc-border); margin:0; }
+  .det  { display:none; flex-direction:column; }
   .det.open { display:flex; }
   .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:12px 16px; }
-  .gc { background:var(--dmc-bg2); border-radius:8px; padding:8px 10px; }
-  .gl { font-size:11px; color:var(--dmc-text2); margin-bottom:3px; }
-  .gv { font-size:15px; font-weight:500; color:var(--dmc-text); }
-  .gu { font-size:11px; color:var(--dmc-text2); font-weight:400; }
+  .gc   { background:var(--dmc-bg2); border-radius:8px; padding:8px 10px; }
+  .gl   { font-size:11px; color:var(--dmc-text2); margin-bottom:3px; }
+  .gv   { font-size:15px; font-weight:500; color:var(--dmc-text); }
+  .gu   { font-size:11px; color:var(--dmc-text2); font-weight:400; }
   .infos { display:flex; flex-direction:column; gap:8px; padding:0 16px 12px; border-top:1px solid var(--dmc-border); padding-top:10px; }
-  .irow { display:flex; justify-content:space-between; align-items:center; font-size:12px; }
-  .ilbl { color:var(--dmc-text2); display:flex; align-items:center; gap:5px; }
-  .ival { color:var(--dmc-text); font-weight:500; font-size:12px; max-width:60%; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .irow  { display:flex; justify-content:space-between; align-items:center; font-size:12px; }
+  .ilbl  { color:var(--dmc-text2); display:flex; align-items:center; gap:5px; }
+  .ival  { color:var(--dmc-text); font-weight:500; font-size:12px; max-width:60%; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .updtxt { padding:8px 16px 12px; font-size:11px; color:var(--dmc-text2); border-top:1px solid var(--dmc-border); }
   .err { padding:16px; color:var(--error-color,red); font-size:13px; }
 `;
@@ -190,40 +178,29 @@ class DockerManagerCard extends HTMLElement {
     this._stepLbl  = "";
     this._lang     = null;
     this._ids      = null;
-    // Watch for card_mod style injection on host element
+    this._initialized = false;
+    // Sync card_mod styles injected on host element into shadow DOM
     this._styleObserver = new MutationObserver(() => this._syncCardModStyles());
     this._styleObserver.observe(this, { childList: true, subtree: false });
   }
 
-  connectedCallback() {
-    this._syncCardModStyles();
-  }
+  connectedCallback() { this._syncCardModStyles(); }
+  disconnectedCallback() { this._styleObserver?.disconnect(); }
 
-  disconnectedCallback() {
-    this._styleObserver && this._styleObserver.disconnect();
-  }
-
-  /**
-   * card_mod injects a <style> tag directly into the custom element (host).
-   * We forward those styles into our shadow root so they apply inside.
-   */
   _syncCardModStyles() {
-    const hostStyles = [...this.querySelectorAll("style")];
-    let cardModStyle = this.shadowRoot.getElementById("card-mod-forwarded");
-    if (!cardModStyle) {
-      cardModStyle = document.createElement("style");
-      cardModStyle.id = "card-mod-forwarded";
-      this.shadowRoot.appendChild(cardModStyle);
+    const forwarded = this.shadowRoot.getElementById("dmc-cardmod");
+    if (forwarded) {
+      forwarded.textContent = [...this.querySelectorAll("style")]
+        .map(s => s.textContent).join("\n");
     }
-    cardModStyle.textContent = hostStyles.map(s => s.textContent).join("\n");
   }
 
   setConfig(config) {
-    if (!config.entity) throw new Error("docker-manager-card: 'entity' is required (e.g. sensor.mycontainer_state)");
+    if (!config.entity) throw new Error("docker-manager-card: 'entity' is required");
     this._config = config;
     if (config.language) this._lang = getLang(config.language);
-    // Reset ids so they are re-discovered with new config + overrides applied
     this._ids = null;
+    this._initialized = false;
     this._render();
   }
 
@@ -231,63 +208,148 @@ class DockerManagerCard extends HTMLElement {
     this._hass = hass;
     if (!this._lang) this._lang = getLang(hass.language);
     if (!this._ids) {
-      const discovered = discoverEntities(hass, this._config.entity);
-      this._ids = discovered ? applyOverrides(discovered, this._config) : null;
+      const disc = discoverEntities(hass, this._config.entity);
+      this._ids = disc ? applyOverrides(disc, this._config) : null;
     }
     this._render();
   }
 
   t(k) { return (this._lang || TRANSLATIONS.en)[k] || k; }
-
   _s(id) {
     if (!id || !this._hass) return null;
     const e = this._hass.states[id];
     return e ? e.state : null;
   }
-  _a(id, attr) {
-    if (!id || !this._hass) return null;
-    const e = this._hass.states[id];
-    return e ? (e.attributes[attr] ?? null) : null;
-  }
-  _call(domain, service, data) {
-    this._hass && this._hass.callService(domain, service, data);
+  _fmt(v) {
+    return (!v || v === "unavailable" || v === "unknown") ? "—" : v;
   }
   _name() {
     if (this._config.name) return this._config.name;
-    const m = this._config.entity.match(/^sensor\.(.+)_state$/);
+    const m = this._config.entity.match(/^sensor\.(.+?)_state/);
     return m ? m[1].replace(/_/g, " ") : this._config.entity;
   }
-  _fmt(v) {
-    return (v === null || v === undefined || v === "unavailable" || v === "unknown") ? "—" : v;
+  _call(domain, service, data) {
+    this._hass?.callService(domain, service, data);
   }
 
+  // ---- Initial full render (called once) ----
+  _initDOM(ids) {
+    const root = this.shadowRoot;
+    root.innerHTML = `
+      <style id="dmc-styles">${STYLES}</style>
+      <style id="dmc-cardmod"></style>
+      <ha-card>
+        <div class="card">
+          <div class="hdr" id="hdr">
+            <div class="ico" id="ico"></div>
+            <div style="flex:1;min-width:0">
+              <div class="cname" id="cname"></div>
+              <div class="cimage" id="cimage"></div>
+            </div>
+            <span class="badge" id="badge"><span class="dot"></span><span id="badge-lbl"></span></span>
+            <button class="chevbtn" id="tog" aria-label="toggle">
+              <ha-icon icon="mdi:chevron-down" class="chev" id="chev"></ha-icon>
+            </button>
+          </div>
+          <div class="ctrls">
+            <button class="btn" id="ss"></button>
+            <button class="btn rst" id="rst"></button>
+            <button class="btn ml" id="act"></button>
+          </div>
+          <div class="det" id="det">
+            <hr class="sep">
+            <div class="grid">
+              <div class="gc"><div class="gl" id="l-cpu"></div><div class="gv"><span id="v-cpu">—</span><span class="gu" id="u-cpu"></span></div></div>
+              <div class="gc"><div class="gl" id="l-mem"></div><div class="gv"><span id="v-mem">—</span><span class="gu" id="u-mem"></span></div></div>
+              <div class="gc"><div class="gl" id="l-memp"></div><div class="gv"><span id="v-memp">—</span><span class="gu" id="u-memp"></span></div></div>
+              <div class="gc"><div class="gl" id="l-netu"></div><div class="gv"><span id="v-netu">—</span><span class="gu" id="u-netu"></span></div></div>
+              <div class="gc"><div class="gl" id="l-netd"></div><div class="gv"><span id="v-netd">—</span><span class="gu" id="u-netd"></span></div></div>
+              <div class="gc"><div class="gl" id="l-hlth"></div><div class="gv" id="v-hlth" style="font-size:13px">—</div></div>
+            </div>
+            <div class="infos">
+              <div class="irow">
+                <span class="ilbl"><ha-icon icon="mdi:clock-outline"></ha-icon><span id="l-started"></span></span>
+                <span class="ival" id="v-started">—</span>
+              </div>
+              <div class="irow">
+                <span class="ilbl"><ha-icon icon="mdi:layers"></ha-icon><span id="l-image"></span></span>
+                <span class="ival" id="v-image">—</span>
+              </div>
+            </div>
+            <div class="updtxt" id="updtxt"></div>
+          </div>
+        </div>
+      </ha-card>
+    `;
+    this._initialized = true;
+    this._syncCardModStyles();
+    this._bindEvents(ids);
+    this._setStaticLabels();
+  }
+
+  _setStaticLabels() {
+    const r = this.shadowRoot;
+    const set = (id, val) => { const el = r.getElementById(id); if (el) el.textContent = val; };
+    set("l-cpu",     this.t("cpu"));
+    set("l-mem",     this.t("memory"));
+    set("l-memp",    this.t("memory_pct"));
+    set("l-netu",    this.t("net_up"));
+    set("l-netd",    this.t("net_down"));
+    set("l-hlth",    this.t("health"));
+    set("l-started", this.t("started"));
+    set("l-image",   this.t("image"));
+    // Static button labels
+    const rst = r.getElementById("rst");
+    if (rst) rst.innerHTML = `<ha-icon icon="mdi:restart"></ha-icon>${this.t("restart")}`;
+    // Name
+    const cname = r.getElementById("cname");
+    if (cname) cname.textContent = this._name();
+    // Icon
+    const ico = r.getElementById("ico");
+    if (ico) {
+      ico.style.background = this._config.icon_color || "#1A73E8";
+      ico.innerHTML = this._config.icon
+        ? `<ha-icon icon="${this._config.icon}" style="--mdc-icon-size:22px;color:white"></ha-icon>`
+        : WHALE;
+    }
+  }
+
+  // ---- Differential update (called on every hass update) ----
   _render() {
     if (!this._config.entity || !this._hass) return;
 
-    const root = this.shadowRoot;
-    const ids  = this._ids || discoverEntities(this._hass, this._config.entity);
-
+    const ids = this._ids;
     if (!ids) {
-      root.innerHTML = `<style id="dmc-base-styles">${STYLES}</style><div id="dmc-container"><ha-card><div class="card"><div class="err">${this.t("no_entity")}: ${this._config.entity}</div></div></ha-card></div>`;
+      // Show error
+      this.shadowRoot.innerHTML = `<style>${STYLES}</style><style id="dmc-cardmod"></style><ha-card><div class="card"><div class="err">${this.t("no_entity")}: ${this._config.entity}</div></div></ha-card>`;
       this._syncCardModStyles();
       return;
     }
 
-    const state    = this._s(ids.state) || "unknown";
-    const image    = this._s(ids.image) || "";
-    const cpu      = this._fmt(this._s(ids.cpu));
-    const memMb    = this._fmt(this._s(ids.memory));
-    const memPct   = this._fmt(this._s(ids.memory_pct));
-    const netUp    = this._fmt(this._s(ids.net_up));
-    const netDown  = this._fmt(this._s(ids.net_down));
-    const health   = this._fmt(this._s(ids.health));
-    const started  = this._s(ids.started);
+    // First render: build DOM structure
+    if (!this._initialized) {
+      this._initDOM(ids);
+    }
 
-    const isRunning   = state === "running";
-    const updateState = this._s(ids.update);
-    const updateAttrs = this._hass.states[ids.update]?.attributes || {};
-    const lastCheck   = updateAttrs.last_check || null;
-    const updateAvail = updateState === "on";
+    const r = this.shadowRoot;
+    const set = (id, val) => { const el = r.getElementById(id); if (el && el.textContent !== String(val)) el.textContent = val; };
+    const setHTML = (id, val) => { const el = r.getElementById(id); if (el && el.innerHTML !== val) el.innerHTML = val; };
+    const setClass = (id, cls) => { const el = r.getElementById(id); if (el && el.className !== cls) el.className = cls; };
+    const setAttr = (id, attr, val) => { const el = r.getElementById(id); if (el) el[attr] = val; };
+
+    const state      = this._s(ids.state) || "unknown";
+    const image      = this._s(ids.image) || "";
+    const cpu        = this._fmt(this._s(ids.cpu));
+    const memMb      = this._fmt(this._s(ids.memory));
+    const memPct     = this._fmt(this._s(ids.memory_pct));
+    const netUp      = this._fmt(this._s(ids.net_up));
+    const netDown    = this._fmt(this._s(ids.net_down));
+    const health     = this._fmt(this._s(ids.health));
+    const started    = this._s(ids.started);
+    const isRunning  = state === "running";
+    const updAttrs   = this._hass.states[ids.update]?.attributes || {};
+    const lastCheck  = updAttrs.last_check || null;
+    const updateAvail = this._s(ids.update) === "on";
     const neverChecked = !lastCheck;
 
     // Started
@@ -305,8 +367,39 @@ class DockerManagerCard extends HTMLElement {
       } catch { lastCheckStr = lastCheck; }
     }
 
+    // --- Update DOM nodes (no full re-render) ---
+
+    // Badge
+    setClass("badge", `badge ${state}`);
+    set("badge-lbl", this.t(state) || state);
+
+    // Image
+    set("cimage", image);
+
+    // Expand state
+    const det = r.getElementById("det");
+    if (det) {
+      const cls = `det${this._expanded ? " open" : ""}`;
+      if (det.className !== cls) det.className = cls;
+    }
+    const chev = r.getElementById("chev");
+    if (chev) {
+      const cls = `chev${this._expanded ? " open" : ""}`;
+      if (chev.className !== cls) chev.className = cls;
+    }
+
+    // Start/Stop button
+    const ss = r.getElementById("ss");
+    if (ss) {
+      const ssCls = isRunning ? "btn danger" : "btn success";
+      const ssHTML = `<ha-icon icon="${isRunning ? "mdi:stop" : "mdi:play"}"></ha-icon>${isRunning ? this.t("stop") : this.t("start")}`;
+      if (ss.className !== ssCls) ss.className = ssCls;
+      if (ss.innerHTML !== ssHTML) ss.innerHTML = ssHTML;
+      ss._isRunning = isRunning;
+    }
+
     // Action button
-    let aCls = "btn ml", aIco = "mdi:magnify", aLbl = this.t("check_update"), aDis = false;
+    let aCls = "btn chk ml", aIco = "mdi:magnify", aLbl = this.t("check_update"), aDis = false;
     if (this._updState === "checking") {
       aCls = "btn busy ml"; aIco = "mdi:loading"; aLbl = this.t("checking"); aDis = true;
     } else if (this._updState === "updating") {
@@ -316,153 +409,79 @@ class DockerManagerCard extends HTMLElement {
     } else if (updateAvail) {
       aCls = "btn upnow ml"; aIco = "mdi:download"; aLbl = this.t("update_now");
     }
-
-    // Icon
-    const iconColor = this._config.icon_color || "#1A73E8";
-    const iconHTML  = this._config.icon
-      ? `<ha-icon icon="${this._config.icon}" style="--mdc-icon-size:22px;color:white"></ha-icon>`
-      : WHALE;
-
-    const ssIco = isRunning ? "mdi:stop" : "mdi:play";
-    const ssLbl = isRunning ? this.t("stop") : this.t("start");
-    const ssCls = isRunning ? "btn danger" : "btn success";
-
-    // Keep forwarded card_mod styles — only update the card container
-    let cardModStyle = root.getElementById("card-mod-forwarded");
-    if (!cardModStyle) {
-      cardModStyle = document.createElement("style");
-      cardModStyle.id = "card-mod-forwarded";
+    const act = r.getElementById("act");
+    if (act) {
+      const aHTML = `<ha-icon icon="${aIco}"></ha-icon>${aLbl}`;
+      if (act.className !== aCls) act.className = aCls;
+      if (act.innerHTML !== aHTML) act.innerHTML = aHTML;
+      act.disabled = aDis;
+      act._updateAvail = updateAvail;
+      act._neverChecked = neverChecked;
     }
-    let container = root.getElementById("dmc-container");
-    if (!container) {
-      root.innerHTML = `<style id="dmc-base-styles">${STYLES}</style><div id="dmc-container"></div>`;
-      root.appendChild(cardModStyle);
-      container = root.getElementById("dmc-container");
-      // Re-sync card_mod styles after full reset
-      this._syncCardModStyles();
-    }
-    container.innerHTML = `
-      <ha-card>
-      <div class="card">
-        <div class="hdr" id="hdr">
-          <div class="ico" style="background:${iconColor}">${iconHTML}</div>
-          <div style="flex:1;min-width:0">
-            <div class="cname">${this._name()}</div>
-            <div class="cimage">${image}</div>
-          </div>
-          <span class="badge ${state}"><span class="dot"></span>${this.t(state) || state}</span>
-          <button class="chevbtn" id="tog" aria-label="toggle">
-            <ha-icon icon="mdi:chevron-down" class="chev ${this._expanded ? "open" : ""}"></ha-icon>
-          </button>
-        </div>
 
-        <div class="ctrls">
-          <button class="${ssCls}" id="ss"><ha-icon icon="${ssIco}"></ha-icon>${ssLbl}</button>
-          <button class="btn" id="rst"><ha-icon icon="mdi:restart"></ha-icon>${this.t("restart")}</button>
-          <button class="${aCls}" id="act" ${aDis ? "disabled" : ""}>
-            <ha-icon icon="${aIco}"></ha-icon>${aLbl}
-          </button>
-        </div>
-
-        <div class="det ${this._expanded ? "open" : ""}" id="det">
-          <hr class="sep">
-          <div class="grid">
-            <div class="gc"><div class="gl">${this.t("cpu")}</div><div class="gv">${cpu}<span class="gu">${cpu !== "—" ? "%" : ""}</span></div></div>
-            <div class="gc"><div class="gl">${this.t("memory")}</div><div class="gv">${memMb}<span class="gu">${memMb !== "—" ? " MB" : ""}</span></div></div>
-            <div class="gc"><div class="gl">${this.t("memory_pct")}</div><div class="gv">${memPct}<span class="gu">${memPct !== "—" ? "%" : ""}</span></div></div>
-            <div class="gc"><div class="gl">${this.t("net_up")}</div><div class="gv">${netUp}<span class="gu">${netUp !== "—" ? " kB/s" : ""}</span></div></div>
-            <div class="gc"><div class="gl">${this.t("net_down")}</div><div class="gv">${netDown}<span class="gu">${netDown !== "—" ? " kB/s" : ""}</span></div></div>
-            <div class="gc"><div class="gl">${this.t("health")}</div><div class="gv" style="font-size:13px">${health}</div></div>
-          </div>
-          <div class="infos">
-            <div class="irow">
-              <span class="ilbl"><ha-icon icon="mdi:clock-outline"></ha-icon>${this.t("started")}</span>
-              <span class="ival">${startedStr}</span>
-            </div>
-            <div class="irow">
-              <span class="ilbl"><ha-icon icon="mdi:layers"></ha-icon>${this.t("image")}</span>
-              <span class="ival">${image || "—"}</span>
-            </div>
-          </div>
-          <div class="updtxt">${lastCheckStr}</div>
-        </div>
-      </div>
-      </ha-card>
-    `;
-
-    this._bind(ids, isRunning, updateAvail, neverChecked);
+    // Stats
+    set("v-cpu",  cpu);  setHTML("u-cpu",  cpu  !== "—" ? "%" : "");
+    set("v-mem",  memMb); setHTML("u-mem",  memMb !== "—" ? " MB" : "");
+    set("v-memp", memPct); setHTML("u-memp", memPct !== "—" ? "%" : "");
+    set("v-netu", netUp); setHTML("u-netu", netUp !== "—" ? " kB/s" : "");
+    set("v-netd", netDown); setHTML("u-netd", netDown !== "—" ? " kB/s" : "");
+    set("v-hlth", health);
+    set("v-started", startedStr);
+    set("v-image", image || "—");
+    set("updtxt", lastCheckStr);
   }
 
-  _bind(ids, isRunning, updateAvail, neverChecked) {
-    const r   = this.shadowRoot;
-    const tog = r.getElementById("tog");
-    const hdr = r.getElementById("hdr");
-    const ss  = r.getElementById("ss");
-    const rst = r.getElementById("rst");
-    const act = r.getElementById("act");
+  _bindEvents(ids) {
+    const r = this.shadowRoot;
 
-    const toggleExpand = () => { this._expanded = !this._expanded; this._render(); };
-    tog.addEventListener("click", (e) => { e.stopPropagation(); toggleExpand(); });
-    hdr.addEventListener("click", toggleExpand);
+    const toggle = () => { this._expanded = !this._expanded; this._render(); };
+    r.getElementById("tog")?.addEventListener("click", e => { e.stopPropagation(); toggle(); });
+    r.getElementById("hdr")?.addEventListener("click", toggle);
 
-    ss.addEventListener("click", () => {
+    r.getElementById("ss")?.addEventListener("click", () => {
+      const isRunning = r.getElementById("ss")?._isRunning;
       this._call("switch", isRunning ? "turn_off" : "turn_on", { entity_id: ids.sw });
     });
 
-    rst.addEventListener("click", () => {
+    r.getElementById("rst")?.addEventListener("click", () => {
       this._call("button", "press", { entity_id: ids.restart_btn });
     });
 
-    if (act && !act.disabled) {
-      act.addEventListener("click", async () => {
-        if (updateAvail && !neverChecked) {
-          // Update with step labels
-          this._updState = "updating";
-          this._call("update", "install", { entity_id: ids.update });
-          const steps = [
-            [1500, "step_pull"], [1800, "step_pull"], [1200, "step_stop"],
-            [1200, "step_remove"], [1200, "step_create"], [1200, "step_start"],
-          ];
-          for (const [ms, key] of steps) {
-            this._stepLbl = this.t(key);
-            this._render();
-            await new Promise(r => setTimeout(r, ms));
-          }
-          this._stepLbl = this.t("step_done");
-          this._render();
-          await new Promise(r => setTimeout(r, 2500));
-          this._updState = "idle"; this._stepLbl = "";
-          this._render();
-        } else {
-          // Check
-          this._updState = "checking"; this._render();
-          this._call("button", "press", { entity_id: ids.check_btn });
-          await new Promise(r => setTimeout(r, 5000));
-          const afterCheck = this._hass?.states[ids.update]?.state;
-          if (afterCheck !== "on") {
-            this._updState = "just_checked"; this._render();
-            await new Promise(r => setTimeout(r, 3000));
-          }
-          this._updState = "idle"; this._render();
+    r.getElementById("act")?.addEventListener("click", async () => {
+      const act = r.getElementById("act");
+      const updateAvail = act?._updateAvail;
+      const neverChecked = act?._neverChecked;
+      if (act?.disabled) return;
+
+      if (updateAvail && !neverChecked) {
+        this._updState = "updating";
+        this._call("update", "install", { entity_id: ids.update });
+        const steps = [[1500,"step_pull"],[1800,"step_pull"],[1200,"step_stop"],[1200,"step_remove"],[1200,"step_create"],[1200,"step_start"]];
+        for (const [ms, key] of steps) {
+          this._stepLbl = this.t(key); this._render();
+          await new Promise(r => setTimeout(r, ms));
         }
-      });
-    }
+        this._stepLbl = this.t("step_done"); this._render();
+        await new Promise(r => setTimeout(r, 2500));
+        this._updState = "idle"; this._stepLbl = ""; this._render();
+      } else {
+        this._updState = "checking"; this._render();
+        this._call("button", "press", { entity_id: ids.check_btn });
+        await new Promise(r => setTimeout(r, 5000));
+        const afterCheck = this._hass?.states[ids.update]?.state;
+        if (afterCheck !== "on") {
+          this._updState = "just_checked"; this._render();
+          await new Promise(r => setTimeout(r, 3000));
+        }
+        this._updState = "idle"; this._render();
+      }
+    });
   }
 
   getCardSize() { return this._expanded ? 5 : 2; }
 
   static getStubConfig() {
-    return {
-      entity: "sensor.mycontainer_state",
-      // Optional overrides — uncomment and set if entities were renamed in HA:
-      // entity_switch: "switch.mycontainer_container",
-      // entity_restart: "button.mycontainer_restart",
-      // entity_check_update: "button.mycontainer_check_for_update",
-      // entity_update: "update.mycontainer_update",
-      // entity_cpu: "sensor.mycontainer_cpu",
-      // entity_memory: "sensor.mycontainer_memory",
-      // entity_memory_pct: "sensor.mycontainer_memory_2",
-    };
+    return { entity: "sensor.mycontainer_state" };
   }
 }
 
