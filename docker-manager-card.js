@@ -5,7 +5,7 @@
  * @version 1.4.0
  */
 
-const CARD_VERSION = "1.4.2";
+const CARD_VERSION = "1.4.3";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -369,6 +369,7 @@ class DockerManagerCard extends HTMLElement {
 
     const state      = this._s(ids.state) || "unknown";
 	const style = getComputedStyle(this);
+	
 	const stateColors = {
 	  running: style.getPropertyValue("--dmc-icon-running").trim(),
       stopped: style.getPropertyValue("--dmc-icon-stopped").trim(),
@@ -376,6 +377,7 @@ class DockerManagerCard extends HTMLElement {
       restarting: style.getPropertyValue("--dmc-icon-restarting").trim(),
       dead: style.getPropertyValue("--dmc-icon-dead").trim(),
     };
+	
     const image      = this._s(ids.image) || "";
     const cpu        = this._fmt(this._s(ids.cpu));
     const memMb      = this._fmt(this._s(ids.memory));
