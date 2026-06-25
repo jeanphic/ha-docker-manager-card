@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "1.6.0";
+const CARD_VERSION = "1.7.0";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -483,26 +483,76 @@ class DockerManagerCard extends HTMLElement {
 
     r.getElementById("ss")?.addEventListener("click", async () => {
       const isRunning = r.getElementById("ss")?._isRunning;
-      // Show immediate feedback — stopping/starting
-      this._localState = isRunning ? "stopped" : "running";
+      const targetState = isRunning ? "stopped" : "running";
+
+      // Show immediate feedback
+      this._localState = targetState;
       this._render();
       this._call("switch", isRunning ? "turn_off" : "turn_on", { entity_id: ids.sw });
-      // Hold local state for 3s then let real HA state take over
-      await new Promise(res => setTimeout(res, 3000));
-      this._localState = null;
-      this._render();
+
+      // Poll until real HA state matches target (or 30s timeout)
+      const maxWait = 30000;
+      const pollInterval = 1500;
+      const started = Date.now();
+
+      const poll = async () => {
+        if (Date.now() - started > maxWait) {
+          // Timeout — release local override, show real state
+          this._localState = null;
+          this._render();
+          return;
+        }
+        const realState = this._normalizeState(this._s(ids.state) || "unknown");
+        if (realState === targetState) {
+          // Target reached — release local override
+          this._localState = null;
+          this._render();
+        } else {
+          await new Promise(res => setTimeout(res, pollInterval));
+          poll();
+        }
+      };
+
+      // Start polling after a short initial delay (give HA time to react)
+      await new Promise(res => setTimeout(res, 1000));
+      poll();
     });
 
     r.getElementById("rst")?.addEventListener("click", async () => {
-      // Show restarting state locally immediately — Docker's "restarting"
-      // state is so brief (<1s) that the coordinator almost never captures it
+      // Show restarting immediately — Docker's real "restarting" state
+      // is too brief (<1s) for the coordinator to capture
       this._localState = "restarting";
       this._render();
       this._call("button", "press", { entity_id: ids.restart_btn });
-      // Hold restarting display for 3s then clear local override
-      await new Promise(res => setTimeout(res, 3000));
-      this._localState = null;
-      this._render();
+
+      // Wait for container to stop first (state != running), then come back up
+      // Timeout safety: 30s max
+      const maxWait = 30000;
+      const started = Date.now();
+      let wentDown = false;
+
+      const poll = async () => {
+        if (Date.now() - started > maxWait) {
+          this._localState = null;
+          this._render();
+          return;
+        }
+        const realState = this._normalizeState(this._s(ids.state) || "unknown");
+        if (!wentDown && realState !== "running") {
+          wentDown = true;
+        }
+        if (wentDown && realState === "running") {
+          // Container is back up — release override
+          this._localState = null;
+          this._render();
+        } else {
+          await new Promise(res => setTimeout(res, 1500));
+          poll();
+        }
+      };
+
+      await new Promise(res => setTimeout(res, 800));
+      poll();
     });
 
     r.getElementById("act")?.addEventListener("click", async () => {
