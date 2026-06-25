@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "1.7.0";
+const CARD_VERSION = "1.7.1";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -144,8 +144,8 @@ const STYLES = `
   .card.dead       { border-left-color: var(--dmc-border-dead); }
   .card.created    { border-left-color: var(--dmc-border-created); }
   .card.removing   { border-left-color: var(--dmc-border-removing); }
-  .hdr    { display:flex; align-items:center; gap:12px; padding:14px 16px 0; cursor:pointer; user-select:none; }
-  .ico    { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: background 0.3s; }
+  .hdr    { display:flex; align-items:center; gap:12px; padding:12px 14px 0; cursor:pointer; user-select:none; }
+  .ico    { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: background 0.3s; }
   @keyframes dmc-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   .ico.restarting-spin { animation: dmc-spin 1s linear infinite; }
   .cname  { font-size:15px; font-weight:500; color:var(--dmc-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -162,7 +162,7 @@ const STYLES = `
   .chevbtn { margin-left:auto; background:none; border:none; cursor:pointer; color:var(--dmc-text2); padding:4px; display:flex; align-items:center; flex-shrink:0; }
   .chev    { transition:transform .2s; }
   .chev.open { transform:rotate(180deg); }
-  .ctrls   { display:flex; align-items:center; gap:6px; padding:10px 16px 14px; }
+  .ctrls   { display:flex; align-items:center; gap:6px; padding:8px 14px 12px; }
   .btn     { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:500; padding:5px 10px; border-radius:6px; border:1px solid var(--dmc-border); background:var(--dmc-bg); color:var(--dmc-text); cursor:pointer; transition:filter 0.15s; white-space:nowrap; }
   .btn:hover:not([disabled]) { filter:brightness(0.92); }
   .btn[disabled]  { opacity:0.55; cursor:not-allowed; }
