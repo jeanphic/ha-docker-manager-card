@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "1.5.1";
+const CARD_VERSION = "1.6.0";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -95,45 +95,45 @@ const STYLES = `
     --dmc-border:        var(--divider-color, rgba(0,0,0,0.12));
     --dmc-bg2:           var(--secondary-background-color, #f5f5f5);
     --dmc-radius:        var(--ha-card-border-radius, 12px);
-    /* Button colors */
-    --dmc-btn-stop-bg:        transparent;
-    --dmc-btn-stop-color:     #A32D2D;
-    --dmc-btn-stop-border:    #F09595;
-    --dmc-btn-start-bg:       transparent;
-    --dmc-btn-start-color:    #3B6D11;
-    --dmc-btn-start-border:   #97C459;
-    --dmc-btn-restart-bg:     transparent;
-    --dmc-btn-restart-color:  var(--dmc-text);
-    --dmc-btn-restart-border: var(--dmc-border);
-    --dmc-btn-check-bg:       transparent;
-    --dmc-btn-check-color:    var(--dmc-text);
-    --dmc-btn-check-border:   var(--dmc-border);
-    --dmc-btn-update-bg:      #E6F1FB;
-    --dmc-btn-update-color:   #185FA5;
-    --dmc-btn-update-border:  #85B7EB;
-    --dmc-btn-uptd-bg:        #EAF3DE;
-    --dmc-btn-uptd-color:     #3B6D11;
-    --dmc-btn-uptd-border:    #C0DD97;
+    /* Button colors — harmonised with #cecece40 background */
+    --dmc-btn-stop-bg:        rgba(192,57,43,0.13);
+    --dmc-btn-stop-color:     #e57373;
+    --dmc-btn-stop-border:    rgba(229,115,115,0.4);
+    --dmc-btn-start-bg:       rgba(39,174,96,0.13);
+    --dmc-btn-start-color:    #81c784;
+    --dmc-btn-start-border:   rgba(129,199,132,0.4);
+    --dmc-btn-restart-bg:     rgba(255,255,255,0.09);
+    --dmc-btn-restart-color:  #cfd8dc;
+    --dmc-btn-restart-border: rgba(255,255,255,0.19);
+    --dmc-btn-check-bg:       rgba(255,255,255,0.09);
+    --dmc-btn-check-color:    #cfd8dc;
+    --dmc-btn-check-border:   rgba(255,255,255,0.19);
+    --dmc-btn-update-bg:      rgba(21,101,192,0.27);
+    --dmc-btn-update-color:   #90caf9;
+    --dmc-btn-update-border:  rgba(144,202,249,0.4);
+    --dmc-btn-uptd-bg:        rgba(39,174,96,0.2);
+    --dmc-btn-uptd-color:     #a5d6a7;
+    --dmc-btn-uptd-border:    rgba(165,214,167,0.4);
     /* State icon colors */
-    --dmc-icon-running:    #43A047;
-    --dmc-icon-stopped:    #E53935;
-    --dmc-icon-paused:     #FB8C00;
-    --dmc-icon-restarting: #3949AB;
-    --dmc-icon-dead:       #757575;
-    --dmc-icon-created:    #757575;
-    --dmc-icon-removing:   #FF9100;
+    --dmc-icon-running:    #64b5f6;
+    --dmc-icon-stopped:    #ef5350;
+    --dmc-icon-paused:     #ffa726;
+    --dmc-icon-restarting: #7986cb;
+    --dmc-icon-dead:       #78909c;
+    --dmc-icon-created:    #78909c;
+    --dmc-icon-removing:   #ffa726;
     /* State border colors */
-    --dmc-border-running:    #6495ED;
-    --dmc-border-stopped:    #DC143C;
-    --dmc-border-paused:     #FB8C00;
-    --dmc-border-restarting: #3949AB;
-    --dmc-border-dead:       #757575;
-    --dmc-border-created:    #757575;
-    --dmc-border-removing:   #FF9100;
+    --dmc-border-running:    #64b5f6;
+    --dmc-border-stopped:    #ef5350;
+    --dmc-border-paused:     #ffa726;
+    --dmc-border-restarting: #7986cb;
+    --dmc-border-dead:       #78909c;
+    --dmc-border-created:    #78909c;
+    --dmc-border-removing:   #ffa726;
     /* Metric thresholds */
-    --dmc-metric-ok:      #00C853;
-    --dmc-metric-warning: #FF9100;
-    --dmc-metric-danger:  #D50000;
+    --dmc-metric-ok:      #80cbc4;
+    --dmc-metric-warning: #ffb74d;
+    --dmc-metric-danger:  #ef5350;
   }
   ha-card { overflow: hidden; font-family: var(--primary-font-family, Roboto, sans-serif); border-radius: var(--dmc-radius); }
   .card { background: var(--dmc-bg); border-left: 5px solid transparent; transition: border-left-color 0.3s; }
@@ -481,9 +481,16 @@ class DockerManagerCard extends HTMLElement {
     r.getElementById("tog")?.addEventListener("click", e => { e.stopPropagation(); toggle(); });
     r.getElementById("hdr")?.addEventListener("click", toggle);
 
-    r.getElementById("ss")?.addEventListener("click", () => {
+    r.getElementById("ss")?.addEventListener("click", async () => {
       const isRunning = r.getElementById("ss")?._isRunning;
+      // Show immediate feedback — stopping/starting
+      this._localState = isRunning ? "stopped" : "running";
+      this._render();
       this._call("switch", isRunning ? "turn_off" : "turn_on", { entity_id: ids.sw });
+      // Hold local state for 3s then let real HA state take over
+      await new Promise(res => setTimeout(res, 3000));
+      this._localState = null;
+      this._render();
     });
 
     r.getElementById("rst")?.addEventListener("click", async () => {
