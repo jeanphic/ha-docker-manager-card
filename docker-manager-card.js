@@ -5,17 +5,17 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "1.5.0";
+const CARD_VERSION = "1.5.1";
 
 // ---------------------------------------------------------------------------
 // i18n
 // ---------------------------------------------------------------------------
 const TRANSLATIONS = {
-  en: { running:"Running", stopped:"Stopped", paused:"Paused", restarting:"Restarting", dead:"Dead", created:"Created", stop:"Stop", start:"Start", restart:"Restart", check_update:"Check for update", update_now:"Update now", up_to_date:"Up to date", checking:"Checking…", never_checked:"Never checked", last_checked:"Last checked", update_available:"update available", cpu:"CPU", memory:"Memory", memory_pct:"Memory %", net_up:"Net ↑", net_down:"Net ↓", health:"Health", started:"Started", image:"Image", step_pull:"Pulling image…", step_stop:"Stopping…", step_remove:"Removing…", step_create:"Creating…", step_start:"Starting…", step_done:"Update complete", no_entity:"Entity not found" },
-  fr: { running:"En cours", stopped:"Arrêté", paused:"En pause", restarting:"Redémarrage", dead:"Mort", created:"Créé", stop:"Arrêter", start:"Démarrer", restart:"Redémarrer", check_update:"Vérifier", update_now:"Mettre à jour", up_to_date:"À jour", checking:"Vérification…", never_checked:"Jamais vérifié", last_checked:"Dernière vérification", update_available:"mise à jour disponible", cpu:"CPU", memory:"Mémoire", memory_pct:"Mémoire %", net_up:"Réseau ↑", net_down:"Réseau ↓", health:"Santé", started:"Démarré le", image:"Image", step_pull:"Téléchargement…", step_stop:"Arrêt…", step_remove:"Suppression…", step_create:"Création…", step_start:"Démarrage…", step_done:"Mise à jour terminée", no_entity:"Entité introuvable" },
-  de: { running:"Läuft", stopped:"Gestoppt", paused:"Pausiert", restarting:"Neustart", dead:"Tot", created:"Erstellt", stop:"Stoppen", start:"Starten", restart:"Neustart", check_update:"Prüfen", update_now:"Aktualisieren", up_to_date:"Aktuell", checking:"Prüfe…", never_checked:"Nie geprüft", last_checked:"Zuletzt geprüft", update_available:"Update verfügbar", cpu:"CPU", memory:"Speicher", memory_pct:"Speicher %", net_up:"Netz ↑", net_down:"Netz ↓", health:"Status", started:"Gestartet", image:"Image", step_pull:"Image laden…", step_stop:"Stoppe…", step_remove:"Entferne…", step_create:"Erstelle…", step_start:"Starte…", step_done:"Aktualisierung abgeschlossen", no_entity:"Entität nicht gefunden" },
-  es: { running:"Ejecutando", stopped:"Detenido", paused:"En pausa", restarting:"Reiniciando", dead:"Muerto", created:"Creado", stop:"Detener", start:"Iniciar", restart:"Reiniciar", check_update:"Verificar", update_now:"Actualizar", up_to_date:"Al día", checking:"Verificando…", never_checked:"Nunca verificado", last_checked:"Última verificación", update_available:"actualización disponible", cpu:"CPU", memory:"Memoria", memory_pct:"Memoria %", net_up:"Red ↑", net_down:"Red ↓", health:"Salud", started:"Iniciado", image:"Imagen", step_pull:"Descargando…", step_stop:"Deteniendo…", step_remove:"Eliminando…", step_create:"Creando…", step_start:"Iniciando…", step_done:"Actualización completada", no_entity:"Entidad no encontrada" },
-  nl: { running:"Actief", stopped:"Gestopt", paused:"Gepauzeerd", restarting:"Herstart", dead:"Dood", created:"Aangemaakt", stop:"Stoppen", start:"Starten", restart:"Herstarten", check_update:"Controleren", update_now:"Bijwerken", up_to_date:"Up-to-date", checking:"Controleren…", never_checked:"Nooit gecontroleerd", last_checked:"Laatste controle", update_available:"update beschikbaar", cpu:"CPU", memory:"Geheugen", memory_pct:"Geheugen %", net_up:"Net ↑", net_down:"Net ↓", health:"Status", started:"Gestart", image:"Image", step_pull:"Image laden…", step_stop:"Stoppen…", step_remove:"Verwijderen…", step_create:"Aanmaken…", step_start:"Starten…", step_done:"Bijwerken voltooid", no_entity:"Entiteit niet gevonden" },
+  en: { running:"Running", stopped:"Stopped", paused:"Paused", restarting:"Restarting", dead:"Dead", created:"Created", removing:"Removing", stop:"Stop", start:"Start", restart:"Restart", check_update:"Check for update", update_now:"Update now", up_to_date:"Up to date", checking:"Checking…", never_checked:"Never checked", last_checked:"Last checked", update_available:"update available", cpu:"CPU", memory:"Memory", memory_pct:"Memory %", net_up:"Net ↑", net_down:"Net ↓", health:"Health", started:"Started", image:"Image", step_pull:"Pulling image…", step_stop:"Stopping…", step_remove:"Removing…", step_create:"Creating…", step_start:"Starting…", step_done:"Update complete", no_entity:"Entity not found" },
+  fr: { running:"En cours", stopped:"Arrêté", paused:"En pause", restarting:"Redémarrage", dead:"Mort", created:"Créé", removing:"Suppression", stop:"Arrêter", start:"Démarrer", restart:"Redémarrer", check_update:"Vérifier", update_now:"Mettre à jour", up_to_date:"À jour", checking:"Vérification…", never_checked:"Jamais vérifié", last_checked:"Dernière vérification", update_available:"mise à jour disponible", cpu:"CPU", memory:"Mémoire", memory_pct:"Mémoire %", net_up:"Réseau ↑", net_down:"Réseau ↓", health:"Santé", started:"Démarré le", image:"Image", step_pull:"Téléchargement…", step_stop:"Arrêt…", step_remove:"Suppression…", step_create:"Création…", step_start:"Démarrage…", step_done:"Mise à jour terminée", no_entity:"Entité introuvable" },
+  de: { running:"Läuft", stopped:"Gestoppt", paused:"Pausiert", restarting:"Neustart", dead:"Tot", created:"Erstellt", removing:"Wird entfernt", stop:"Stoppen", start:"Starten", restart:"Neustart", check_update:"Prüfen", update_now:"Aktualisieren", up_to_date:"Aktuell", checking:"Prüfe…", never_checked:"Nie geprüft", last_checked:"Zuletzt geprüft", update_available:"Update verfügbar", cpu:"CPU", memory:"Speicher", memory_pct:"Speicher %", net_up:"Netz ↑", net_down:"Netz ↓", health:"Status", started:"Gestartet", image:"Image", step_pull:"Image laden…", step_stop:"Stoppe…", step_remove:"Entferne…", step_create:"Erstelle…", step_start:"Starte…", step_done:"Aktualisierung abgeschlossen", no_entity:"Entität nicht gefunden" },
+  es: { running:"Ejecutando", stopped:"Detenido", paused:"En pausa", restarting:"Reiniciando", dead:"Muerto", created:"Creado", removing:"Eliminando", stop:"Detener", start:"Iniciar", restart:"Reiniciar", check_update:"Verificar", update_now:"Actualizar", up_to_date:"Al día", checking:"Verificando…", never_checked:"Nunca verificado", last_checked:"Última verificación", update_available:"actualización disponible", cpu:"CPU", memory:"Memoria", memory_pct:"Memoria %", net_up:"Red ↑", net_down:"Red ↓", health:"Salud", started:"Iniciado", image:"Imagen", step_pull:"Descargando…", step_stop:"Deteniendo…", step_remove:"Eliminando…", step_create:"Creando…", step_start:"Iniciando…", step_done:"Actualización completada", no_entity:"Entidad no encontrada" },
+  nl: { running:"Actief", stopped:"Gestopt", paused:"Gepauzeerd", restarting:"Herstart", dead:"Dood", created:"Aangemaakt", removing:"Verwijderen", stop:"Stoppen", start:"Starten", restart:"Herstarten", check_update:"Controleren", update_now:"Bijwerken", up_to_date:"Up-to-date", checking:"Controleren…", never_checked:"Nooit gecontroleerd", last_checked:"Laatste controle", update_available:"update beschikbaar", cpu:"CPU", memory:"Geheugen", memory_pct:"Geheugen %", net_up:"Net ↑", net_down:"Net ↓", health:"Status", started:"Gestart", image:"Image", step_pull:"Image laden…", step_stop:"Stoppen…", step_remove:"Verwijderen…", step_create:"Aanmaken…", step_start:"Starten…", step_done:"Bijwerken voltooid", no_entity:"Entiteit niet gevonden" },
 };
 
 function getLang(lang) {
@@ -89,7 +89,7 @@ function applyOverrides(ids, config) {
 const STYLES = `
   :host {
     display: block;
-    --dmc-bg:            var(--card-background-color, #fff);
+    --dmc-bg:            #cecece40;
     --dmc-text:          var(--primary-text-color, #212121);
     --dmc-text2:         var(--secondary-text-color, #757575);
     --dmc-border:        var(--divider-color, rgba(0,0,0,0.12));
@@ -120,12 +120,16 @@ const STYLES = `
     --dmc-icon-paused:     #FB8C00;
     --dmc-icon-restarting: #3949AB;
     --dmc-icon-dead:       #757575;
+    --dmc-icon-created:    #757575;
+    --dmc-icon-removing:   #FF9100;
     /* State border colors */
     --dmc-border-running:    #6495ED;
     --dmc-border-stopped:    #DC143C;
     --dmc-border-paused:     #FB8C00;
     --dmc-border-restarting: #3949AB;
     --dmc-border-dead:       #757575;
+    --dmc-border-created:    #757575;
+    --dmc-border-removing:   #FF9100;
     /* Metric thresholds */
     --dmc-metric-ok:      #00C853;
     --dmc-metric-warning: #FF9100;
@@ -138,6 +142,8 @@ const STYLES = `
   .card.paused     { border-left-color: var(--dmc-border-paused); }
   .card.restarting { border-left-color: var(--dmc-border-restarting); }
   .card.dead       { border-left-color: var(--dmc-border-dead); }
+  .card.created    { border-left-color: var(--dmc-border-created); }
+  .card.removing   { border-left-color: var(--dmc-border-removing); }
   .hdr    { display:flex; align-items:center; gap:12px; padding:14px 16px 0; cursor:pointer; user-select:none; }
   .ico    { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: background 0.3s; }
   @keyframes dmc-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -151,6 +157,8 @@ const STYLES = `
   .badge.paused     { background:#FAEEDA; color:#854F0B; }
   .badge.restarting { background:#E8EAF6; color:#3949AB; }
   .badge.dead       { background:#EEEEEE; color:#616161; }
+  .badge.created    { background:#EEEEEE; color:#616161; }
+  .badge.removing   { background:#FFF3E0; color:#E65100; }
   .chevbtn { margin-left:auto; background:none; border:none; cursor:pointer; color:var(--dmc-text2); padding:4px; display:flex; align-items:center; flex-shrink:0; }
   .chev    { transition:transform .2s; }
   .chev.open { transform:rotate(180deg); }
@@ -200,6 +208,7 @@ class DockerManagerCard extends HTMLElement {
     this._lang        = null;
     this._ids         = null;
     this._initialized = false;
+    this._localState  = null; // temporary state override (e.g. "restarting")
     this._styleObserver = new MutationObserver(() => this._syncCardModStyles());
     this._styleObserver.observe(this, { childList: true, subtree: false });
   }
@@ -357,7 +366,8 @@ class DockerManagerCard extends HTMLElement {
     const setCls   = (id, cls) => { const el = r.getElementById(id); if (el && el.className !== cls) el.className = cls; };
 
     const rawState   = this._s(ids.state) || "unknown";
-    const state      = this._normalizeState(rawState);
+    // Use local state override if set (e.g. briefly show "restarting" on button click)
+    const state      = this._localState || this._normalizeState(rawState);
     const image      = this._s(ids.image) || "";
     const cpu        = this._fmt(this._s(ids.cpu));
     const memMb      = this._fmt(this._s(ids.memory));
@@ -394,7 +404,7 @@ class DockerManagerCard extends HTMLElement {
     // --- Card border ---
     const card = r.getElementById("card");
     if (card) {
-      const validStates = ["running","stopped","paused","restarting","dead"];
+      const validStates = ["running","stopped","paused","restarting","dead","created","removing"];
       const cardCls = `card ${validStates.includes(state) ? state : "dead"}`;
       if (card.className !== cardCls) card.className = cardCls;
     }
@@ -476,8 +486,16 @@ class DockerManagerCard extends HTMLElement {
       this._call("switch", isRunning ? "turn_off" : "turn_on", { entity_id: ids.sw });
     });
 
-    r.getElementById("rst")?.addEventListener("click", () => {
+    r.getElementById("rst")?.addEventListener("click", async () => {
+      // Show restarting state locally immediately — Docker's "restarting"
+      // state is so brief (<1s) that the coordinator almost never captures it
+      this._localState = "restarting";
+      this._render();
       this._call("button", "press", { entity_id: ids.restart_btn });
+      // Hold restarting display for 3s then clear local override
+      await new Promise(res => setTimeout(res, 3000));
+      this._localState = null;
+      this._render();
     });
 
     r.getElementById("act")?.addEventListener("click", async () => {
