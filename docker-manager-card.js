@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "1.8.0";
+const CARD_VERSION = "1.8.1";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -89,7 +89,7 @@ function applyOverrides(ids, config) {
 const STYLES = `
   :host {
     display: block;
-    --dmc-bg:            var(--card-background-color, #fff);
+    --dmc-bg:            #cecece40;
     --dmc-text:          var(--primary-text-color, #212121);
     --dmc-text2:         var(--secondary-text-color, #757575);
     --dmc-border:        var(--divider-color, rgba(0,0,0,0.12));
