@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "1.7.2";
+const CARD_VERSION = "1.8.0";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -89,7 +89,7 @@ function applyOverrides(ids, config) {
 const STYLES = `
   :host {
     display: block;
-    --dmc-bg:            #cecece40;
+    --dmc-bg:            var(--card-background-color, #fff);
     --dmc-text:          var(--primary-text-color, #212121);
     --dmc-text2:         var(--secondary-text-color, #757575);
     --dmc-border:        var(--divider-color, rgba(0,0,0,0.12));
@@ -209,6 +209,7 @@ class DockerManagerCard extends HTMLElement {
     this._ids         = null;
     this._initialized = false;
     this._localState  = null; // temporary state override (e.g. "restarting")
+    this._pollToken   = null; // cancellation token for state polling
     this._styleObserver = new MutationObserver(() => this._syncCardModStyles());
     this._styleObserver.observe(this, { childList: true, subtree: false });
   }
@@ -485,6 +486,10 @@ class DockerManagerCard extends HTMLElement {
       const isRunning = r.getElementById("ss")?._isRunning;
       const targetState = isRunning ? "stopped" : "running";
 
+      // Cancel any ongoing poll (previous action not yet complete)
+      const token = Symbol();
+      this._pollToken = token;
+
       // Show immediate feedback
       this._localState = targetState;
       this._render();
@@ -492,59 +497,70 @@ class DockerManagerCard extends HTMLElement {
 
       // Poll until real HA state matches target (or 30s timeout)
       const maxWait = 30000;
-      const pollInterval = 1500;
       const started = Date.now();
 
       const poll = async () => {
+        // If a newer action started, abandon this poll
+        if (this._pollToken !== token) return;
+
         if (Date.now() - started > maxWait) {
-          // Timeout — release local override, show real state
-          this._localState = null;
-          this._render();
+          if (this._pollToken === token) {
+            this._localState = null;
+            this._pollToken = null;
+            this._render();
+          }
           return;
         }
         const realState = this._normalizeState(this._s(ids.state) || "unknown");
         if (realState === targetState) {
-          // Target reached — release local override
-          this._localState = null;
-          this._render();
+          if (this._pollToken === token) {
+            this._localState = null;
+            this._pollToken = null;
+            this._render();
+          }
         } else {
-          await new Promise(res => setTimeout(res, pollInterval));
+          await new Promise(res => setTimeout(res, 1500));
           poll();
         }
       };
 
-      // Start polling after a short initial delay (give HA time to react)
       await new Promise(res => setTimeout(res, 1000));
       poll();
     });
 
     r.getElementById("rst")?.addEventListener("click", async () => {
-      // Show restarting immediately — Docker's real "restarting" state
-      // is too brief (<1s) for the coordinator to capture
+      // Cancel any ongoing poll
+      const token = Symbol();
+      this._pollToken = token;
+
+      // Show restarting immediately
       this._localState = "restarting";
       this._render();
       this._call("button", "press", { entity_id: ids.restart_btn });
 
-      // Wait for container to stop first (state != running), then come back up
-      // Timeout safety: 30s max
       const maxWait = 30000;
       const started = Date.now();
       let wentDown = false;
 
       const poll = async () => {
+        if (this._pollToken !== token) return;
+
         if (Date.now() - started > maxWait) {
-          this._localState = null;
-          this._render();
+          if (this._pollToken === token) {
+            this._localState = null;
+            this._pollToken = null;
+            this._render();
+          }
           return;
         }
         const realState = this._normalizeState(this._s(ids.state) || "unknown");
-        if (!wentDown && realState !== "running") {
-          wentDown = true;
-        }
+        if (!wentDown && realState !== "running") wentDown = true;
         if (wentDown && realState === "running") {
-          // Container is back up — release override
-          this._localState = null;
-          this._render();
+          if (this._pollToken === token) {
+            this._localState = null;
+            this._pollToken = null;
+            this._render();
+          }
         } else {
           await new Promise(res => setTimeout(res, 1500));
           poll();
