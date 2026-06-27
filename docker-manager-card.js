@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "1.9.0";
+const CARD_VERSION = "2.0.0";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -636,40 +636,44 @@ console.info(
 );
 
 // ---------------------------------------------------------------------------
-// docker-overview-card — Global Docker stats + prune button
+// docker-overview-card — Global Docker stats + prune button (single row)
 // ---------------------------------------------------------------------------
 const OVERVIEW_STYLES = `
   :host {
     display: block;
-    --dmc-bg:     #cecece40;
-    --dmc-text:   var(--primary-text-color, #212121);
-    --dmc-text2:  var(--secondary-text-color, #757575);
-    --dmc-border: var(--divider-color, rgba(0,0,0,0.12));
-    --dmc-bg2:    var(--secondary-background-color, #f5f5f5);
-    --dmc-radius: var(--ha-card-border-radius, 12px);
-    --dmc-btn-prune-bg:     rgba(255,152,0,0.13);
-    --dmc-btn-prune-color:  #ffb74d;
-    --dmc-btn-prune-border: rgba(255,183,77,0.4);
+    --dmc-bg:              #cecece40;
+    --dmc-text:            var(--primary-text-color, #212121);
+    --dmc-text2:           var(--secondary-text-color, #757575);
+    --dmc-radius:          var(--ha-card-border-radius, 12px);
+    --dmc-btn-prune-bg:    rgba(255,152,0,0.13);
+    --dmc-btn-prune-color: #ffb74d;
+    --dmc-btn-prune-border:rgba(255,183,77,0.4);
+    --dmc-ov-total:        var(--primary-text-color, #cfd8dc);
+    --dmc-ov-running:      #64b5f6;
+    --dmc-ov-stopped:      #ef5350;
+    --dmc-ov-paused:       #ffa726;
+    --dmc-ov-images:       #90caf9;
   }
-  ha-card { overflow: hidden; font-family: var(--primary-font-family, Roboto, sans-serif); border-radius: var(--dmc-radius); }
-  .card { background: var(--dmc-bg); }
-  .hdr { display:flex; align-items:center; gap:10px; padding:10px 12px 6px; border-bottom:1px solid var(--dmc-border); }
-  .title { font-size:15px; font-weight:500; color:var(--dmc-text); flex:1; }
-  .version { font-size:11px; color:var(--dmc-text2); }
-  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:12px 16px; }
-  .gc { background:var(--dmc-bg2); border-radius:8px; padding:10px 12px; text-align:center; }
-  .gv { font-size:22px; font-weight:600; color:var(--dmc-text); }
-  .gl { font-size:11px; color:var(--dmc-text2); margin-top:3px; }
-  .gv.running    { color:#64b5f6; }
-  .gv.stopped    { color:#ef5350; }
-  .gv.paused     { color:#ffa726; }
-  .gv.total      { color:var(--dmc-text); }
-  .gv.images     { color:#90caf9; }
-  .footer { padding:0 16px 14px; display:flex; justify-content:flex-end; }
-  .btn { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:500; padding:5px 12px; border-radius:6px; cursor:pointer; transition:filter 0.15s; white-space:nowrap; background:var(--dmc-btn-prune-bg); color:var(--dmc-btn-prune-color); border:1px solid var(--dmc-btn-prune-border); }
-  .btn:hover { filter:brightness(1.15); }
+  ha-card { overflow:hidden; font-family:var(--primary-font-family,Roboto,sans-serif); border-radius:var(--dmc-radius); }
+  .card { background:var(--dmc-bg); }
+  .row { display:flex; align-items:center; gap:6px; padding:8px 12px; flex-wrap:nowrap; overflow:hidden; }
+  .docker-ico { flex-shrink:0; color:#1A73E8; --mdc-icon-size:18px; }
+  .title { font-size:13px; font-weight:500; color:var(--dmc-text); white-space:nowrap; margin-right:2px; flex-shrink:0; }
+  .sep { color:var(--dmc-text2); opacity:0.35; font-size:11px; flex-shrink:0; }
+  .stat { display:inline-flex; align-items:baseline; gap:2px; flex-shrink:0; }
+  .sv { font-size:14px; font-weight:700; line-height:1; }
+  .sl { font-size:10px; color:var(--dmc-text2); white-space:nowrap; }
+  .sv.total   { color:var(--dmc-ov-total); }
+  .sv.running { color:var(--dmc-ov-running); }
+  .sv.stopped { color:var(--dmc-ov-stopped); }
+  .sv.paused  { color:var(--dmc-ov-paused); }
+  .sv.images  { color:var(--dmc-ov-images); }
+  .spacer { flex:1; min-width:2px; }
+  .version { font-size:10px; color:var(--dmc-text2); opacity:0.5; flex-shrink:0; white-space:nowrap; margin-right:4px; }
+  .btn { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:500; padding:3px 8px; border-radius:5px; cursor:pointer; flex-shrink:0; background:var(--dmc-btn-prune-bg); color:var(--dmc-btn-prune-color); border:1px solid var(--dmc-btn-prune-border); transition:filter 0.15s; white-space:nowrap; }
+  .btn:hover { filter:brightness(1.2); }
   .btn[disabled] { opacity:0.5; cursor:not-allowed; }
-  ha-icon { --mdc-icon-size:15px; }
+  ha-icon { --mdc-icon-size:13px; }
 `;
 
 class DockerOverviewCard extends HTMLElement {
@@ -730,80 +734,63 @@ class DockerOverviewCard extends HTMLElement {
     const paused  = this._s(ids.paused)  || "—";
     const images  = this._s(ids.images)  || "—";
     const version = this._s(ids.version) || "";
+    const title   = this._config.name || "Docker";
 
-    const title = this._config.name || "Docker";
-
-    // Labels i18n — use hass.language
     const lang = (this._hass.language || "en").split("-")[0].toLowerCase();
     const labels = {
-      fr: { total:"Total", running:"En cours", stopped:"Arrêtés", paused:"En pause", images:"Images", prune:"Nettoyer images" },
-      de: { total:"Gesamt", running:"Laufend", stopped:"Gestoppt", paused:"Pausiert", images:"Images", prune:"Images bereinigen" },
-      es: { total:"Total", running:"Activos", stopped:"Detenidos", paused:"En pausa", images:"Imágenes", prune:"Limpiar imágenes" },
-      nl: { total:"Totaal", running:"Actief", stopped:"Gestopt", paused:"Gepauzeerd", images:"Images", prune:"Images opruimen" },
-      en: { total:"Total", running:"Running", stopped:"Stopped", paused:"Paused", images:"Images", prune:"Prune images" },
+      fr: { total:"tot.", running:"actifs", stopped:"arrêtés", paused:"pause", images:"img", prune:"Nettoyer" },
+      de: { total:"ges.",  running:"laufend", stopped:"gestoppt", paused:"pause", images:"img", prune:"Bereinigen" },
+      es: { total:"tot.",  running:"activos", stopped:"parados", paused:"pausa", images:"img", prune:"Limpiar" },
+      nl: { total:"tot.",  running:"actief", stopped:"gestopt", paused:"pauze", images:"img", prune:"Opruimen" },
+      en: { total:"total", running:"up", stopped:"down", paused:"paused", images:"img", prune:"Prune" },
     };
     const l = labels[lang] || labels.en;
 
-    root.innerHTML = `
-      <style>${OVERVIEW_STYLES}</style>
+    root.innerHTML = \`
+      <style>\${OVERVIEW_STYLES}</style>
       <style id="ov-cardmod"></style>
       <ha-card>
         <div class="card">
-          <div class="hdr">
-            <ha-icon icon="mdi:docker" style="--mdc-icon-size:20px;color:#1A73E8"></ha-icon>
-            <span class="title">${title}</span>
-            ${version ? `<span class="version">v${version}</span>` : ""}
-          </div>
-          <div class="grid">
-            <div class="gc">
-              <div class="gv total">${total}</div>
-              <div class="gl">${l.total}</div>
-            </div>
-            <div class="gc">
-              <div class="gv running">${running}</div>
-              <div class="gl">${l.running}</div>
-            </div>
-            <div class="gc">
-              <div class="gv stopped">${stopped}</div>
-              <div class="gl">${l.stopped}</div>
-            </div>
-            <div class="gc">
-              <div class="gv paused">${paused}</div>
-              <div class="gl">${l.paused}</div>
-            </div>
-            <div class="gc" style="grid-column:span 2">
-              <div class="gv images">${images}</div>
-              <div class="gl">${l.images}</div>
-            </div>
-          </div>
-          <div class="footer">
+          <div class="row">
+            <ha-icon class="docker-ico" icon="mdi:docker"></ha-icon>
+            <span class="title">\${title}</span>
+            <span class="sep">|</span>
+            <span class="stat"><span class="sv total">\${total}</span><span class="sl">\${l.total}</span></span>
+            <span class="sep">·</span>
+            <span class="stat"><span class="sv running">\${running}</span><span class="sl">\${l.running}</span></span>
+            <span class="sep">·</span>
+            <span class="stat"><span class="sv stopped">\${stopped}</span><span class="sl">\${l.stopped}</span></span>
+            <span class="sep">·</span>
+            <span class="stat"><span class="sv paused">\${paused}</span><span class="sl">\${l.paused}</span></span>
+            <span class="sep">·</span>
+            <span class="stat"><span class="sv images">\${images}</span><span class="sl">\${l.images}</span></span>
+            <span class="spacer"></span>
+            \${version ? \`<span class="version">v\${version}</span>\` : ""}
             <button class="btn" id="prune-btn">
-              <ha-icon icon="mdi:broom"></ha-icon>${l.prune}
+              <ha-icon icon="mdi:broom"></ha-icon>\${l.prune}
             </button>
           </div>
         </div>
       </ha-card>
-    `;
+    \`;
 
     this._syncCardModStyles();
 
-    // Prune button
     const pruneBtn = root.getElementById("prune-btn");
     pruneBtn?.addEventListener("click", async () => {
       pruneBtn.disabled = true;
-      pruneBtn.innerHTML = `<ha-icon icon="mdi:loading"></ha-icon>…`;
+      pruneBtn.innerHTML = \`<ha-icon icon="mdi:loading"></ha-icon>…\`;
       await this._hass.callService("docker_manager", "prune_images", {
         all_unused: this._config.all_unused || false,
       });
       await new Promise(res => setTimeout(res, 2000));
       pruneBtn.disabled = false;
-      const lang2 = (this._hass.language || "en").split("-")[0].toLowerCase();
-      const l2 = labels[lang2] || labels.en;
-      pruneBtn.innerHTML = `<ha-icon icon="mdi:broom"></ha-icon>${l2.prune}`;
+      const l2 = labels[(this._hass.language || "en").split("-")[0].toLowerCase()] || labels.en;
+      pruneBtn.innerHTML = \`<ha-icon icon="mdi:broom"></ha-icon>\${l2.prune}\`;
     });
   }
 
-  getCardSize() { return 3; }
+  getCardSize() { return 1; }
   static getStubConfig() { return { name: "Docker" }; }
 }
 
