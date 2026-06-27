@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "2.0.0";
+const CARD_VERSION = "2.0.1;
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -746,47 +746,48 @@ class DockerOverviewCard extends HTMLElement {
     };
     const l = labels[lang] || labels.en;
 
-    root.innerHTML = \`
-      <style>\${OVERVIEW_STYLES}</style>
+    const versionHtml = version ? `<span class="version">v${version}</span>` : "";
+    root.innerHTML = `
+      <style>${OVERVIEW_STYLES}</style>
       <style id="ov-cardmod"></style>
       <ha-card>
         <div class="card">
           <div class="row">
             <ha-icon class="docker-ico" icon="mdi:docker"></ha-icon>
-            <span class="title">\${title}</span>
+            <span class="title">${title}</span>
             <span class="sep">|</span>
-            <span class="stat"><span class="sv total">\${total}</span><span class="sl">\${l.total}</span></span>
+            <span class="stat"><span class="sv total">${total}</span><span class="sl">${l.total}</span></span>
             <span class="sep">·</span>
-            <span class="stat"><span class="sv running">\${running}</span><span class="sl">\${l.running}</span></span>
+            <span class="stat"><span class="sv running">${running}</span><span class="sl">${l.running}</span></span>
             <span class="sep">·</span>
-            <span class="stat"><span class="sv stopped">\${stopped}</span><span class="sl">\${l.stopped}</span></span>
+            <span class="stat"><span class="sv stopped">${stopped}</span><span class="sl">${l.stopped}</span></span>
             <span class="sep">·</span>
-            <span class="stat"><span class="sv paused">\${paused}</span><span class="sl">\${l.paused}</span></span>
+            <span class="stat"><span class="sv paused">${paused}</span><span class="sl">${l.paused}</span></span>
             <span class="sep">·</span>
-            <span class="stat"><span class="sv images">\${images}</span><span class="sl">\${l.images}</span></span>
+            <span class="stat"><span class="sv images">${images}</span><span class="sl">${l.images}</span></span>
             <span class="spacer"></span>
-            \${version ? \`<span class="version">v\${version}</span>\` : ""}
+            ${versionHtml}
             <button class="btn" id="prune-btn">
-              <ha-icon icon="mdi:broom"></ha-icon>\${l.prune}
+              <ha-icon icon="mdi:broom"></ha-icon>${l.prune}
             </button>
           </div>
         </div>
       </ha-card>
-    \`;
+    `;
 
     this._syncCardModStyles();
 
     const pruneBtn = root.getElementById("prune-btn");
     pruneBtn?.addEventListener("click", async () => {
       pruneBtn.disabled = true;
-      pruneBtn.innerHTML = \`<ha-icon icon="mdi:loading"></ha-icon>…\`;
+      pruneBtn.innerHTML = `<ha-icon icon="mdi:loading"></ha-icon>…`;
       await this._hass.callService("docker_manager", "prune_images", {
         all_unused: this._config.all_unused || false,
       });
       await new Promise(res => setTimeout(res, 2000));
       pruneBtn.disabled = false;
       const l2 = labels[(this._hass.language || "en").split("-")[0].toLowerCase()] || labels.en;
-      pruneBtn.innerHTML = \`<ha-icon icon="mdi:broom"></ha-icon>\${l2.prune}\`;
+      pruneBtn.innerHTML = `<ha-icon icon="mdi:broom"></ha-icon>${l2.prune}`;
     });
   }
 
