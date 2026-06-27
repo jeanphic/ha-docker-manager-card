@@ -89,7 +89,7 @@ function applyOverrides(ids, config) {
 const STYLES = `
   :host {
     display: block;
-    --dmc-bg:            var(--card-background-color, #fff);
+    --dmc-bg:            #cecece40;
     --dmc-text:          var(--primary-text-color, #212121);
     --dmc-text2:         var(--secondary-text-color, #757575);
     --dmc-border:        var(--divider-color, rgba(0,0,0,0.12));
@@ -144,8 +144,8 @@ const STYLES = `
   .card.dead       { border-left-color: var(--dmc-border-dead); }
   .card.created    { border-left-color: var(--dmc-border-created); }
   .card.removing   { border-left-color: var(--dmc-border-removing); }
-  .hdr    { display:flex; align-items:center; gap:12px; padding:14px 16px 0; cursor:pointer; user-select:none; }
-  .ico    { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: background 0.3s; }
+  .hdr    { display:flex; align-items:center; gap:12px; padding:10px 12px 0; cursor:pointer; user-select:none; }
+  .ico    { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: background 0.3s; }
   @keyframes dmc-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   .ico.restarting-spin { animation: dmc-spin 1s linear infinite; }
   .cname  { font-size:15px; font-weight:500; color:var(--dmc-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -162,7 +162,7 @@ const STYLES = `
   .chevbtn { margin-left:auto; background:none; border:none; cursor:pointer; color:var(--dmc-text2); padding:4px; display:flex; align-items:center; flex-shrink:0; }
   .chev    { transition:transform .2s; }
   .chev.open { transform:rotate(180deg); }
-  .ctrls   { display:flex; align-items:center; gap:6px; padding:10px 16px 14px; }
+  .ctrls   { display:flex; align-items:center; gap:6px; padding:8px 12px 10px; }
   .btn     { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:500; padding:5px 10px; border-radius:6px; border:1px solid var(--dmc-border); background:var(--dmc-bg); color:var(--dmc-text); cursor:pointer; transition:filter 0.15s; white-space:nowrap; }
   .btn:hover:not([disabled]) { filter:brightness(0.92); }
   .btn[disabled]  { opacity:0.55; cursor:not-allowed; }
@@ -375,7 +375,8 @@ class DockerManagerCard extends HTMLElement {
     const memPct     = this._fmt(this._s(ids.memory_pct));
     const netUp      = this._fmt(this._s(ids.net_up));
     const netDown    = this._fmt(this._s(ids.net_down));
-    const health     = this._fmt(this._s(ids.health));
+	const rawHealth = this._s(ids.health);
+    const health = this._fmt(rawHealth);
     const started    = this._s(ids.started);
     const isRunning  = state === "running";
     const updAttrs   = this._hass.states[ids.update]?.attributes || {};
@@ -466,7 +467,9 @@ class DockerManagerCard extends HTMLElement {
     // Hide health tile if no HEALTHCHECK configured in Docker
     const hlthGc = r.getElementById("gc-hlth");
     if (hlthGc) {
-      const hideHealth = !health || health === "—" || health === "none";
+      const hideHealth =
+		!rawHealth ||
+		String(rawHealth).toLowerCase().startsWith("none");
       hlthGc.style.display = hideHealth ? "none" : "";
     }
     set("v-hlth", health);
@@ -638,7 +641,7 @@ console.info(
 const OVERVIEW_STYLES = `
   :host {
     display: block;
-    --dmc-bg:     var(--card-background-color, #fff);
+    --dmc-bg:     #cecece40;
     --dmc-text:   var(--primary-text-color, #212121);
     --dmc-text2:  var(--secondary-text-color, #757575);
     --dmc-border: var(--divider-color, rgba(0,0,0,0.12));
@@ -650,7 +653,7 @@ const OVERVIEW_STYLES = `
   }
   ha-card { overflow: hidden; font-family: var(--primary-font-family, Roboto, sans-serif); border-radius: var(--dmc-radius); }
   .card { background: var(--dmc-bg); }
-  .hdr { display:flex; align-items:center; gap:10px; padding:14px 16px 10px; border-bottom:1px solid var(--dmc-border); }
+  .hdr { display:flex; align-items:center; gap:10px; padding:10px 12px 6px; border-bottom:1px solid var(--dmc-border); }
   .title { font-size:15px; font-weight:500; color:var(--dmc-text); flex:1; }
   .version { font-size:11px; color:var(--dmc-text2); }
   .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:12px 16px; }
