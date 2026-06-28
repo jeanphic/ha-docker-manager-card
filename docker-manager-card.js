@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "2.0.2";
+const CARD_VERSION = "2.1.0";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -636,7 +636,7 @@ console.info(
 );
 
 // ---------------------------------------------------------------------------
-// docker-overview-card — Global Docker stats + prune button (single row)
+// docker-overview-card — Global Docker stats + prune button (2 compact rows)
 // ---------------------------------------------------------------------------
 const OVERVIEW_STYLES = `
   :host {
@@ -644,6 +644,7 @@ const OVERVIEW_STYLES = `
     --dmc-bg:              #cecece40;
     --dmc-text:            var(--primary-text-color, #212121);
     --dmc-text2:           var(--secondary-text-color, #757575);
+    --dmc-border:          var(--divider-color, rgba(0,0,0,0.12));
     --dmc-radius:          var(--ha-card-border-radius, 12px);
     --dmc-btn-prune-bg:    rgba(255,152,0,0.13);
     --dmc-btn-prune-color: #ffb74d;
@@ -656,20 +657,23 @@ const OVERVIEW_STYLES = `
   }
   ha-card { overflow:hidden; font-family:var(--primary-font-family,Roboto,sans-serif); border-radius:var(--dmc-radius); }
   .card { background:var(--dmc-bg); }
-  .row { display:flex; align-items:center; gap:6px; padding:8px 12px; flex-wrap:nowrap; overflow:hidden; }
-  .docker-ico { flex-shrink:0; color:#1A73E8; --mdc-icon-size:18px; }
-  .title { font-size:13px; font-weight:500; color:var(--dmc-text); white-space:nowrap; margin-right:2px; flex-shrink:0; }
+  /* Row 1: title + version */
+  .row1 { display:flex; align-items:center; gap:6px; padding:7px 12px 6px; border-bottom:0.5px solid var(--dmc-border); }
+  .docker-ico { flex-shrink:0; color:#1A73E8; --mdc-icon-size:16px; }
+  .title { font-size:13px; font-weight:500; color:var(--dmc-text); white-space:nowrap; flex-shrink:0; }
+  .spacer { flex:1; }
+  .version { font-size:10px; color:var(--dmc-text2); opacity:0.5; flex-shrink:0; white-space:nowrap; }
+  /* Row 2: stats + prune */
+  .row2 { display:flex; align-items:center; gap:6px; padding:6px 12px 7px; }
   .sep { color:var(--dmc-text2); opacity:0.35; font-size:11px; flex-shrink:0; }
   .stat { display:inline-flex; align-items:baseline; gap:2px; flex-shrink:0; }
-  .sv { font-size:14px; font-weight:700; line-height:1; }
+  .sv { font-size:13px; font-weight:700; line-height:1; }
   .sl { font-size:10px; color:var(--dmc-text2); white-space:nowrap; }
   .sv.total   { color:var(--dmc-ov-total); }
   .sv.running { color:var(--dmc-ov-running); }
   .sv.stopped { color:var(--dmc-ov-stopped); }
   .sv.paused  { color:var(--dmc-ov-paused); }
   .sv.images  { color:var(--dmc-ov-images); }
-  .spacer { flex:1; min-width:2px; }
-  .version { font-size:10px; color:var(--dmc-text2); opacity:0.5; flex-shrink:0; white-space:nowrap; margin-right:4px; }
   .btn { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:500; padding:3px 8px; border-radius:5px; cursor:pointer; flex-shrink:0; background:var(--dmc-btn-prune-bg); color:var(--dmc-btn-prune-color); border:1px solid var(--dmc-btn-prune-border); transition:filter 0.15s; white-space:nowrap; }
   .btn:hover { filter:brightness(1.2); }
   .btn[disabled] { opacity:0.5; cursor:not-allowed; }
@@ -752,10 +756,13 @@ class DockerOverviewCard extends HTMLElement {
       <style id="ov-cardmod"></style>
       <ha-card>
         <div class="card">
-          <div class="row">
+          <div class="row1">
             <ha-icon class="docker-ico" icon="mdi:docker"></ha-icon>
             <span class="title">${title}</span>
-            <span class="sep">|</span>
+            <span class="spacer"></span>
+            ${versionHtml}
+          </div>
+          <div class="row2">
             <span class="stat"><span class="sv total">${total}</span><span class="sl">${l.total}</span></span>
             <span class="sep">·</span>
             <span class="stat"><span class="sv running">${running}</span><span class="sl">${l.running}</span></span>
@@ -766,7 +773,6 @@ class DockerOverviewCard extends HTMLElement {
             <span class="sep">·</span>
             <span class="stat"><span class="sv images">${images}</span><span class="sl">${l.images}</span></span>
             <span class="spacer"></span>
-            ${versionHtml}
             <button class="btn" id="prune-btn">
               <ha-icon icon="mdi:broom"></ha-icon>${l.prune}
             </button>
