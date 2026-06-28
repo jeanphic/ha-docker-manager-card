@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "2.1.1";
+const CARD_VERSION = "2.3.0";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -636,7 +636,7 @@ console.info(
 );
 
 // ---------------------------------------------------------------------------
-// docker-overview-card — Global Docker stats + prune button (2 compact rows)
+// docker-overview-card — Global Docker stats + prune button (3 rows)
 // ---------------------------------------------------------------------------
 const OVERVIEW_STYLES = `
   :host {
@@ -645,6 +645,7 @@ const OVERVIEW_STYLES = `
     --dmc-text:            var(--primary-text-color, #212121);
     --dmc-text2:           var(--secondary-text-color, #757575);
     --dmc-border:          var(--divider-color, rgba(0,0,0,0.12));
+    --dmc-bg2:             var(--secondary-background-color, rgba(255,255,255,0.08));
     --dmc-radius:          var(--ha-card-border-radius, 12px);
     --dmc-btn-prune-bg:    rgba(255,152,0,0.13);
     --dmc-btn-prune-color: #ffb74d;
@@ -657,35 +658,37 @@ const OVERVIEW_STYLES = `
   }
   ha-card { overflow:hidden; font-family:var(--primary-font-family,Roboto,sans-serif); border-radius:var(--dmc-radius); }
   .card { background:var(--dmc-bg); }
-  /* Row 1: title + version */
-  .row1 { display:flex; align-items:center; gap:6px; padding:7px 12px 6px; border-bottom:0.5px solid var(--dmc-border); }
-  .docker-ico { flex-shrink:0; color:#1A73E8; --mdc-icon-size:16px; }
-  .title { font-size:13px; font-weight:500; color:var(--dmc-text); white-space:nowrap; flex-shrink:0; }
-  .spacer { flex:1; }
-  .version { font-size:10px; color:var(--dmc-text2); opacity:0.5; flex-shrink:0; white-space:nowrap; }
-  /* Row 2: stats + prune */
-  .row2 { display:flex; align-items:center; gap:6px; padding:6px 12px 7px; }
-  .sep { color:var(--dmc-text2); opacity:0.35; font-size:11px; flex-shrink:0; }
-  .stat { display:inline-flex; align-items:baseline; gap:2px; flex-shrink:0; }
-  .sv { font-size:13px; font-weight:700; line-height:1; }
-  .sl { font-size:10px; color:var(--dmc-text2); white-space:nowrap; }
-  .sv.total   { color:var(--dmc-ov-total); }
-  .sv.running { color:var(--dmc-ov-running); }
-  .sv.stopped { color:var(--dmc-ov-stopped); }
-  .sv.paused  { color:var(--dmc-ov-paused); }
-  .sv.images  { color:var(--dmc-ov-images); }
-  .btn { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:500; padding:3px 8px; border-radius:5px; cursor:pointer; flex-shrink:0; background:var(--dmc-btn-prune-bg); color:var(--dmc-btn-prune-color); border:1px solid var(--dmc-btn-prune-border); transition:filter 0.15s; white-space:nowrap; }
+  /* Row 1 — header */
+  .hdr { display:flex; align-items:center; gap:8px; padding:10px 14px 8px; }
+  .docker-ico { flex-shrink:0; color:#1A73E8; --mdc-icon-size:18px; }
+  .title { font-size:14px; font-weight:500; color:var(--dmc-text); flex:1; }
+  .version { font-size:10px; color:var(--dmc-text2); opacity:0.6; }
+  /* Row 2 — stats grid */
+  .grid { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; padding:0 14px 10px; }
+  .gc { background:var(--dmc-bg2); border-radius:8px; padding:8px 6px; text-align:center; }
+  .gv { font-size:20px; font-weight:700; line-height:1.1; }
+  .gl { font-size:10px; color:var(--dmc-text2); margin-top:3px; white-space:nowrap; }
+  .gv.total   { color:var(--dmc-ov-total); }
+  .gv.running { color:var(--dmc-ov-running); }
+  .gv.stopped { color:var(--dmc-ov-stopped); }
+  .gv.paused  { color:var(--dmc-ov-paused); }
+  .gv.images  { color:var(--dmc-ov-images); }
+  /* Row 3 — prune button */
+  .footer { display:flex; justify-content:flex-end; padding:0 14px 10px; border-top:0.5px solid var(--dmc-border); padding-top:8px; }
+  .btn { display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:500; padding:4px 10px; border-radius:6px; cursor:pointer; background:var(--dmc-btn-prune-bg); color:var(--dmc-btn-prune-color); border:1px solid var(--dmc-btn-prune-border); transition:filter 0.15s; white-space:nowrap; }
   .btn:hover { filter:brightness(1.2); }
   .btn[disabled] { opacity:0.5; cursor:not-allowed; }
-  ha-icon { --mdc-icon-size:13px; }
+  ha-icon { --mdc-icon-size:14px; }
 `;
 
 class DockerOverviewCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    this._config = {};
-    this._hass   = null;
+    this._config      = {};
+    this._hass        = null;
+    this._initialized = false;
+    this._labels      = null;
     this._styleObserver = new MutationObserver(() => this._syncCardModStyles());
     this._styleObserver.observe(this, { childList: true, subtree: false });
   }
@@ -699,7 +702,8 @@ class DockerOverviewCard extends HTMLElement {
   }
 
   setConfig(config) {
-    this._config = config;
+    this._config      = config;
+    this._initialized = false;
     this._render();
   }
 
@@ -714,65 +718,51 @@ class DockerOverviewCard extends HTMLElement {
     return e ? e.state : null;
   }
 
-  // Find global Docker entities — they all start with sensor.docker_
   _ids() {
     const p = this._config.prefix || "docker";
     return {
-      total:      `sensor.${p}_containers_total`,
-      running:    `sensor.${p}_containers_running`,
-      stopped:    `sensor.${p}_containers_stopped`,
-      paused:     `sensor.${p}_containers_paused`,
-      images:     `sensor.${p}_images_total`,
-      version:    `sensor.${p}_docker_version`,
+      total:   `sensor.${p}_containers_total`,
+      running: `sensor.${p}_containers_running`,
+      stopped: `sensor.${p}_containers_stopped`,
+      paused:  `sensor.${p}_containers_paused`,
+      images:  `sensor.${p}_images_total`,
+      version: `sensor.${p}_docker_version`,
     };
   }
 
-  _render() {
-    if (!this._hass) return;
-    const root = this.shadowRoot;
-    const ids  = this._ids();
-
-    const total   = this._s(ids.total)   || "—";
-    const running = this._s(ids.running) || "—";
-    const stopped = this._s(ids.stopped) || "—";
-    const paused  = this._s(ids.paused)  || "—";
-    const images  = this._s(ids.images)  || "—";
-    const version = this._s(ids.version) || "";
-    const title   = this._config.name || "Docker";
-
-    const lang = (this._hass.language || "en").split("-")[0].toLowerCase();
-    const labels = {
+  _getLabels() {
+    const lang = (this._hass?.language || "en").split("-")[0].toLowerCase();
+    const map = {
       fr: { total:"tot.", running:"actifs", stopped:"arrêtés", paused:"pause", images:"img", prune:"Nettoyer" },
-      de: { total:"ges.",  running:"laufend", stopped:"gestoppt", paused:"pause", images:"img", prune:"Bereinigen" },
-      es: { total:"tot.",  running:"activos", stopped:"parados", paused:"pausa", images:"img", prune:"Limpiar" },
-      nl: { total:"tot.",  running:"actief", stopped:"gestopt", paused:"pauze", images:"img", prune:"Opruimen" },
+      de: { total:"ges.", running:"laufend", stopped:"gestoppt", paused:"pause", images:"img", prune:"Bereinigen" },
+      es: { total:"tot.", running:"activos", stopped:"parados", paused:"pausa", images:"img", prune:"Limpiar" },
+      nl: { total:"tot.", running:"actief", stopped:"gestopt", paused:"pauze", images:"img", prune:"Opruimen" },
       en: { total:"total", running:"up", stopped:"down", paused:"paused", images:"img", prune:"Prune" },
     };
-    const l = labels[lang] || labels.en;
+    return map[lang] || map.en;
+  }
 
-    const versionHtml = version ? `<span class="version">v${version}</span>` : "";
-    root.innerHTML = `
+  _initDOM() {
+    const l     = this._getLabels();
+    const title = this._config.name || "Docker";
+    this.shadowRoot.innerHTML = `
       <style>${OVERVIEW_STYLES}</style>
       <style id="ov-cardmod"></style>
       <ha-card>
         <div class="card">
-          <div class="row1">
+          <div class="hdr">
             <ha-icon class="docker-ico" icon="mdi:docker"></ha-icon>
             <span class="title">${title}</span>
-            <span class="spacer"></span>
-            ${versionHtml}
+            <span class="version" id="ov-version"></span>
           </div>
-          <div class="row2">
-            <span class="stat"><span class="sv total">${total}</span><span class="sl">${l.total}</span></span>
-            <span class="sep">·</span>
-            <span class="stat"><span class="sv running">${running}</span><span class="sl">${l.running}</span></span>
-            <span class="sep">·</span>
-            <span class="stat"><span class="sv stopped">${stopped}</span><span class="sl">${l.stopped}</span></span>
-            <span class="sep">·</span>
-            <span class="stat"><span class="sv paused">${paused}</span><span class="sl">${l.paused}</span></span>
-            <span class="sep">·</span>
-            <span class="stat"><span class="sv images">${images}</span><span class="sl">${l.images}</span></span>
-            <span class="spacer"></span>
+          <div class="grid">
+            <div class="gc"><div class="gv total" id="ov-total">—</div><div class="gl">${l.total}</div></div>
+            <div class="gc"><div class="gv running" id="ov-running">—</div><div class="gl">${l.running}</div></div>
+            <div class="gc"><div class="gv stopped" id="ov-stopped">—</div><div class="gl">${l.stopped}</div></div>
+            <div class="gc"><div class="gv paused" id="ov-paused">—</div><div class="gl">${l.paused}</div></div>
+            <div class="gc"><div class="gv images" id="ov-images">—</div><div class="gl">${l.images}</div></div>
+          </div>
+          <div class="footer">
             <button class="btn" id="prune-btn">
               <ha-icon icon="mdi:broom"></ha-icon>${l.prune}
             </button>
@@ -780,10 +770,10 @@ class DockerOverviewCard extends HTMLElement {
         </div>
       </ha-card>
     `;
-
+    this._initialized = true;
     this._syncCardModStyles();
 
-    const pruneBtn = root.getElementById("prune-btn");
+    const pruneBtn = this.shadowRoot.getElementById("prune-btn");
     pruneBtn?.addEventListener("click", async () => {
       pruneBtn.disabled = true;
       pruneBtn.innerHTML = `<ha-icon icon="mdi:loading"></ha-icon>…`;
@@ -792,12 +782,33 @@ class DockerOverviewCard extends HTMLElement {
       });
       await new Promise(res => setTimeout(res, 2000));
       pruneBtn.disabled = false;
-      const l2 = labels[(this._hass.language || "en").split("-")[0].toLowerCase()] || labels.en;
+      const l2 = this._getLabels();
       pruneBtn.innerHTML = `<ha-icon icon="mdi:broom"></ha-icon>${l2.prune}`;
     });
   }
 
-  getCardSize() { return 1; }
+  _render() {
+    if (!this._hass) return;
+    if (!this._initialized) this._initDOM();
+
+    const ids = this._ids();
+    const r   = this.shadowRoot;
+    const set = (id, val) => {
+      const el = r.getElementById(id);
+      if (el && el.textContent !== String(val)) el.textContent = val;
+    };
+
+    set("ov-total",   this._s(ids.total)   || "—");
+    set("ov-running", this._s(ids.running) || "—");
+    set("ov-stopped", this._s(ids.stopped) || "—");
+    set("ov-paused",  this._s(ids.paused)  || "—");
+    set("ov-images",  this._s(ids.images)  || "—");
+
+    const ver = this._s(ids.version);
+    set("ov-version", ver ? `v${ver}` : "");
+  }
+
+  getCardSize() { return 2; }
   static getStubConfig() { return { name: "Docker" }; }
 }
 
