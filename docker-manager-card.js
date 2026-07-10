@@ -5,17 +5,17 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "2.3.0";
+const CARD_VERSION = "2.4.0";
 
 // ---------------------------------------------------------------------------
 // i18n
 // ---------------------------------------------------------------------------
 const TRANSLATIONS = {
-  en: { running:"Running", stopped:"Stopped", paused:"Paused", restarting:"Restarting", dead:"Dead", created:"Created", removing:"Removing", stop:"Stop", start:"Start", restart:"Restart", check_update:"Check for update", update_now:"Update now", up_to_date:"Up to date", checking:"Checking…", never_checked:"Never checked", last_checked:"Last checked", update_available:"update available", cpu:"CPU", memory:"Memory", memory_pct:"Memory %", net_up:"Net ↑", net_down:"Net ↓", health:"Health", started:"Started", image:"Image", step_pull:"Pulling image…", step_stop:"Stopping…", step_remove:"Removing…", step_create:"Creating…", step_start:"Starting…", step_done:"Update complete", no_entity:"Entity not found" },
-  fr: { running:"En cours", stopped:"Arrêté", paused:"En pause", restarting:"Redémarrage", dead:"Mort", created:"Créé", removing:"Suppression", stop:"Arrêter", start:"Démarrer", restart:"Redémarrer", check_update:"Vérifier", update_now:"Mettre à jour", up_to_date:"À jour", checking:"Vérification…", never_checked:"Jamais vérifié", last_checked:"Dernière vérification", update_available:"mise à jour disponible", cpu:"CPU", memory:"Mémoire", memory_pct:"Mémoire %", net_up:"Réseau ↑", net_down:"Réseau ↓", health:"Santé", started:"Démarré le", image:"Image", step_pull:"Téléchargement…", step_stop:"Arrêt…", step_remove:"Suppression…", step_create:"Création…", step_start:"Démarrage…", step_done:"Mise à jour terminée", no_entity:"Entité introuvable" },
-  de: { running:"Läuft", stopped:"Gestoppt", paused:"Pausiert", restarting:"Neustart", dead:"Tot", created:"Erstellt", removing:"Wird entfernt", stop:"Stoppen", start:"Starten", restart:"Neustart", check_update:"Prüfen", update_now:"Aktualisieren", up_to_date:"Aktuell", checking:"Prüfe…", never_checked:"Nie geprüft", last_checked:"Zuletzt geprüft", update_available:"Update verfügbar", cpu:"CPU", memory:"Speicher", memory_pct:"Speicher %", net_up:"Netz ↑", net_down:"Netz ↓", health:"Status", started:"Gestartet", image:"Image", step_pull:"Image laden…", step_stop:"Stoppe…", step_remove:"Entferne…", step_create:"Erstelle…", step_start:"Starte…", step_done:"Aktualisierung abgeschlossen", no_entity:"Entität nicht gefunden" },
-  es: { running:"Ejecutando", stopped:"Detenido", paused:"En pausa", restarting:"Reiniciando", dead:"Muerto", created:"Creado", removing:"Eliminando", stop:"Detener", start:"Iniciar", restart:"Reiniciar", check_update:"Verificar", update_now:"Actualizar", up_to_date:"Al día", checking:"Verificando…", never_checked:"Nunca verificado", last_checked:"Última verificación", update_available:"actualización disponible", cpu:"CPU", memory:"Memoria", memory_pct:"Memoria %", net_up:"Red ↑", net_down:"Red ↓", health:"Salud", started:"Iniciado", image:"Imagen", step_pull:"Descargando…", step_stop:"Deteniendo…", step_remove:"Eliminando…", step_create:"Creando…", step_start:"Iniciando…", step_done:"Actualización completada", no_entity:"Entidad no encontrada" },
-  nl: { running:"Actief", stopped:"Gestopt", paused:"Gepauzeerd", restarting:"Herstart", dead:"Dood", created:"Aangemaakt", removing:"Verwijderen", stop:"Stoppen", start:"Starten", restart:"Herstarten", check_update:"Controleren", update_now:"Bijwerken", up_to_date:"Up-to-date", checking:"Controleren…", never_checked:"Nooit gecontroleerd", last_checked:"Laatste controle", update_available:"update beschikbaar", cpu:"CPU", memory:"Geheugen", memory_pct:"Geheugen %", net_up:"Net ↑", net_down:"Net ↓", health:"Status", started:"Gestart", image:"Image", step_pull:"Image laden…", step_stop:"Stoppen…", step_remove:"Verwijderen…", step_create:"Aanmaken…", step_start:"Starten…", step_done:"Bijwerken voltooid", no_entity:"Entiteit niet gevonden" },
+  en: { running:"Running", stopped:"Stopped", paused:"Paused", restarting:"Restarting", dead:"Dead", created:"Created", removing:"Removing", stop:"Stop", start:"Start", restart:"Restart", pause:"Pause", unpause:"Resume", check_update:"Check for update", update_now:"Update now", up_to_date:"Up to date", checking:"Checking…", never_checked:"Never checked", last_checked:"Last checked", update_available:"update available", cpu:"CPU", memory:"Memory", memory_pct:"Memory %", net_up:"Net ↑", net_down:"Net ↓", health:"Health", started:"Started", image:"Image", step_pull:"Pulling image…", step_stop:"Stopping…", step_remove:"Removing…", step_create:"Creating…", step_start:"Starting…", step_done:"Update complete", no_entity:"Entity not found" },
+  fr: { running:"En cours", stopped:"Arrêté", paused:"En pause", restarting:"Redémarrage", dead:"Mort", created:"Créé", removing:"Suppression", stop:"Arrêter", start:"Démarrer", restart:"Redémarrer", pause:"Pause", unpause:"Reprendre", check_update:"Vérifier", update_now:"Mettre à jour", up_to_date:"À jour", checking:"Vérification…", never_checked:"Jamais vérifié", last_checked:"Dernière vérification", update_available:"mise à jour disponible", cpu:"CPU", memory:"Mémoire", memory_pct:"Mémoire %", net_up:"Réseau ↑", net_down:"Réseau ↓", health:"Santé", started:"Démarré le", image:"Image", step_pull:"Téléchargement…", step_stop:"Arrêt…", step_remove:"Suppression…", step_create:"Création…", step_start:"Démarrage…", step_done:"Mise à jour terminée", no_entity:"Entité introuvable" },
+  de: { running:"Läuft", stopped:"Gestoppt", paused:"Pausiert", restarting:"Neustart", dead:"Tot", created:"Erstellt", removing:"Wird entfernt", stop:"Stoppen", start:"Starten", restart:"Neustart", pause:"Pause", unpause:"Fortsetzen", check_update:"Prüfen", update_now:"Aktualisieren", up_to_date:"Aktuell", checking:"Prüfe…", never_checked:"Nie geprüft", last_checked:"Zuletzt geprüft", update_available:"Update verfügbar", cpu:"CPU", memory:"Speicher", memory_pct:"Speicher %", net_up:"Netz ↑", net_down:"Netz ↓", health:"Status", started:"Gestartet", image:"Image", step_pull:"Image laden…", step_stop:"Stoppe…", step_remove:"Entferne…", step_create:"Erstelle…", step_start:"Starte…", step_done:"Aktualisierung abgeschlossen", no_entity:"Entität nicht gefunden" },
+  es: { running:"Ejecutando", stopped:"Detenido", paused:"En pausa", restarting:"Reiniciando", dead:"Muerto", created:"Creado", removing:"Eliminando", stop:"Detener", start:"Iniciar", restart:"Reiniciar", pause:"Pausar", unpause:"Reanudar", check_update:"Verificar", update_now:"Actualizar", up_to_date:"Al día", checking:"Verificando…", never_checked:"Nunca verificado", last_checked:"Última verificación", update_available:"actualización disponible", cpu:"CPU", memory:"Memoria", memory_pct:"Memoria %", net_up:"Red ↑", net_down:"Red ↓", health:"Salud", started:"Iniciado", image:"Imagen", step_pull:"Descargando…", step_stop:"Deteniendo…", step_remove:"Eliminando…", step_create:"Creando…", step_start:"Iniciando…", step_done:"Actualización completada", no_entity:"Entidad no encontrada" },
+  nl: { running:"Actief", stopped:"Gestopt", paused:"Gepauzeerd", restarting:"Herstart", dead:"Dood", created:"Aangemaakt", removing:"Verwijderen", stop:"Stoppen", start:"Starten", restart:"Herstarten", pause:"Pauzeren", unpause:"Hervatten", check_update:"Controleren", update_now:"Bijwerken", up_to_date:"Up-to-date", checking:"Controleren…", never_checked:"Nooit gecontroleerd", last_checked:"Laatste controle", update_available:"update beschikbaar", cpu:"CPU", memory:"Geheugen", memory_pct:"Geheugen %", net_up:"Net ↑", net_down:"Net ↓", health:"Status", started:"Gestart", image:"Image", step_pull:"Image laden…", step_stop:"Stoppen…", step_remove:"Verwijderen…", step_create:"Aanmaken…", step_start:"Starten…", step_done:"Bijwerken voltooid", no_entity:"Entiteit niet gevonden" },
 };
 
 function getLang(lang) {
@@ -63,6 +63,7 @@ function discoverEntities(hass, baseEntity) {
     net_up: find("sensor","network_up"), net_down: find("sensor","network_down"),
     health: find("sensor","health"), started: find("sensor","started_at"),
     sw: find("switch","container"), restart_btn: find("button","restart"),
+    pause_btn: find("button","pause"),
     check_btn: find("button","check_for_update"), update: find("update","update"),
   };
 }
@@ -74,6 +75,7 @@ function applyOverrides(ids, config) {
     entity_net_up:"net_up", entity_net_down:"net_down",
     entity_health:"health", entity_started:"started",
     entity_switch:"sw", entity_restart:"restart_btn",
+    entity_pause:"pause_btn",
     entity_check_update:"check_btn", entity_update:"update",
   };
   const result = { ...ids };
@@ -169,6 +171,7 @@ const STYLES = `
   .btn.danger  { background:var(--dmc-btn-stop-bg);    color:var(--dmc-btn-stop-color);    border-color:var(--dmc-btn-stop-border); }
   .btn.success { background:var(--dmc-btn-start-bg);   color:var(--dmc-btn-start-color);   border-color:var(--dmc-btn-start-border); }
   .btn.rst     { background:var(--dmc-btn-restart-bg); color:var(--dmc-btn-restart-color); border-color:var(--dmc-btn-restart-border); }
+  .btn.pau     { background:var(--dmc-btn-pause-bg,rgba(255,255,255,0.09)); color:var(--dmc-btn-pause-color,#cfd8dc); border-color:var(--dmc-btn-pause-border,rgba(255,255,255,0.19)); }
   .btn.chk     { background:var(--dmc-btn-check-bg);   color:var(--dmc-btn-check-color);   border-color:var(--dmc-btn-check-border); }
   .btn.upnow   { background:var(--dmc-btn-update-bg);  color:var(--dmc-btn-update-color);  border-color:var(--dmc-btn-update-border); }
   .btn.uptd    { background:var(--dmc-btn-uptd-bg);    color:var(--dmc-btn-uptd-color);    border-color:var(--dmc-btn-uptd-border); pointer-events:none; }
@@ -295,6 +298,7 @@ class DockerManagerCard extends HTMLElement {
           <div class="ctrls">
             <button class="btn" id="ss"></button>
             <button class="btn rst" id="rst"></button>
+            <button class="btn pau" id="pau"></button>
             <button class="btn ml" id="act"></button>
           </div>
           <div class="det" id="det">
@@ -437,6 +441,19 @@ class DockerManagerCard extends HTMLElement {
       ss._isRunning = isRunning;
     }
 
+    // --- Pause/Unpause button ---
+    const pau = r.getElementById("pau");
+    if (pau) {
+      const isPaused = state === "paused";
+      const pauseVisible = isRunning || isPaused;
+      pau.style.display = pauseVisible ? "" : "none";
+      const pauHTML = isPaused
+        ? `<ha-icon icon="mdi:play-pause"></ha-icon>${this.t("unpause")}`
+        : `<ha-icon icon="mdi:pause"></ha-icon>${this.t("pause")}`;
+      if (pau.innerHTML !== pauHTML) pau.innerHTML = pauHTML;
+      pau._isPaused = isPaused;
+    }
+
     // --- Action button (check / update) ---
     let aCls = "btn chk ml", aIco = "mdi:magnify", aLbl = this.t("check_update"), aDis = false;
     if (this._updState === "checking") {
@@ -534,6 +551,33 @@ class DockerManagerCard extends HTMLElement {
       };
 
       await new Promise(res => setTimeout(res, 1000));
+      poll();
+    });
+
+    r.getElementById("pau")?.addEventListener("click", async () => {
+      const pau = r.getElementById("pau");
+      const isPaused = pau?._isPaused;
+      const token = Symbol();
+      this._pollToken = token;
+      this._localState = isPaused ? "running" : "paused";
+      this._render();
+      this._call("button", "press", { entity_id: ids.pause_btn });
+      // Poll until real state matches
+      const target = isPaused ? "running" : "paused";
+      const started = Date.now();
+      const poll = async () => {
+        if (this._pollToken !== token) return;
+        if (Date.now() - started > 15000) {
+          this._localState = null; this._pollToken = null; this._render(); return;
+        }
+        const real = this._normalizeState(this._s(ids.state) || "unknown");
+        if (real === target) {
+          this._localState = null; this._pollToken = null; this._render();
+        } else {
+          await new Promise(res => setTimeout(res, 1000)); poll();
+        }
+      };
+      await new Promise(res => setTimeout(res, 800));
       poll();
     });
 
@@ -719,14 +763,17 @@ class DockerOverviewCard extends HTMLElement {
   }
 
   _ids() {
+    // Support suffix for additional Docker instances (e.g. suffix: "_2")
+    // which generates sensor.docker_containers_total_2 etc.
+    const suffix = this._config.suffix || "";
     const p = this._config.prefix || "docker";
     return {
-      total:   `sensor.${p}_containers_total`,
-      running: `sensor.${p}_containers_running`,
-      stopped: `sensor.${p}_containers_stopped`,
-      paused:  `sensor.${p}_containers_paused`,
-      images:  `sensor.${p}_images_total`,
-      version: `sensor.${p}_docker_version`,
+      total:   `sensor.${p}_containers_total${suffix}`,
+      running: `sensor.${p}_containers_running${suffix}`,
+      stopped: `sensor.${p}_containers_stopped${suffix}`,
+      paused:  `sensor.${p}_containers_paused${suffix}`,
+      images:  `sensor.${p}_images_total${suffix}`,
+      version: `sensor.${p}_docker_version${suffix}`,
     };
   }
 
