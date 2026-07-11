@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "2.7.0";
+const CARD_VERSION = "2.8.0";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -443,15 +443,16 @@ class DockerManagerCard extends HTMLElement {
     const isPaused = state === "paused";
     const ss = r.getElementById("ss");
     if (ss) {
-      const ssCls  = isRunning ? "btn danger" : "btn success";
+      // When paused: hide Start (user must Resume first), show only Resume button
+      const ssHidden = isPaused && !isRunning;
+      const ssCls  = ssHidden ? "btn success hidden" : (isRunning ? "btn danger" : "btn success");
       const ssIcon = isRunning ? "mdi:stop" : "mdi:play";
       const ssLbl  = isRunning ? this.t("stop") : this.t("start");
       const ssHTML = `<ha-icon icon="${ssIcon}"></ha-icon><span class="btn-lbl">${ssLbl}</span>`;
       if (ss.className !== ssCls) ss.className = ssCls;
       if (ss.innerHTML !== ssHTML) ss.innerHTML = ssHTML;
-      // Disable Start when paused — must unpause first
-      ss.disabled = isPaused && !isRunning;
-      ss.title = (isPaused && !isRunning) ? this.t("unpause") + " → " + this.t("start") : ssLbl;
+      ss.disabled = false;
+      ss.title = ssLbl;
       ss._isRunning = isRunning;
     }
 
