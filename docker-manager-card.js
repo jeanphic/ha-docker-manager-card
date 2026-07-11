@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "2.5.0";
+const CARD_VERSION = "2.6.0";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -137,7 +137,7 @@ const STYLES = `
     --dmc-metric-warning: #ffb74d;
     --dmc-metric-danger:  #ef5350;
   }
-  ha-card { overflow: hidden; font-family: var(--primary-font-family, Roboto, sans-serif); border-radius: var(--dmc-radius); }
+  ha-card { overflow: hidden; font-family: var(--primary-font-family, Roboto, sans-serif); border-radius: var(--dmc-radius); container-type: inline-size; }
   .card { background: var(--dmc-bg); border-left: 5px solid transparent; transition: border-left-color 0.3s; }
   .card.running    { border-left-color: var(--dmc-border-running); }
   .card.stopped    { border-left-color: var(--dmc-border-stopped); }
@@ -164,13 +164,17 @@ const STYLES = `
   .chevbtn { margin-left:auto; background:none; border:none; cursor:pointer; color:var(--dmc-text2); padding:4px; display:flex; align-items:center; flex-shrink:0; }
   .chev    { transition:transform .2s; }
   .chev.open { transform:rotate(180deg); }
-  .ctrls   { display:flex; align-items:center; gap:5px; padding:8px 10px 10px; flex-wrap:nowrap; }
-  .btn     { display:inline-flex; align-items:center; justify-content:center; gap:4px; font-size:11px; font-weight:500; padding:5px 8px; border-radius:6px; border:1px solid var(--dmc-border); background:var(--dmc-bg); color:var(--dmc-text); cursor:pointer; transition:filter 0.15s; white-space:nowrap; flex-shrink:0; min-width:32px; }
-  .btn ha-icon { --mdc-icon-size:16px; }
-  .btn .btn-lbl { display:none; }
-  @media (min-width:400px) { .btn .btn-lbl { display:inline; } }
+  .ctrls   { display:flex; align-items:center; gap:4px; padding:8px 10px 10px; flex-wrap:nowrap; overflow:hidden; }
+  .btn     { display:inline-flex; align-items:center; justify-content:center; gap:3px; font-size:11px; font-weight:500; padding:4px 7px; border-radius:6px; border:1px solid var(--dmc-border); background:var(--dmc-bg); color:var(--dmc-text); cursor:pointer; transition:filter 0.15s; white-space:nowrap; flex-shrink:0; min-width:30px; }
+  .btn ha-icon { --mdc-icon-size:15px; flex-shrink:0; }
+  .btn .btn-lbl { display:none; font-size:11px; }
+  .btn.ml  { margin-left:auto; }
+  /* Show labels only when enough space — container query workaround via host width */
+  @container (min-width: 340px) { .btn .btn-lbl { display:inline; } }
+  .ctrls { container-type: inline-size; }
   .btn:hover:not([disabled]) { filter:brightness(1.12); }
-  .btn[disabled]  { opacity:0.4; cursor:not-allowed; pointer-events:none; }
+  .btn[disabled]  { opacity:0.35; cursor:not-allowed; pointer-events:none; }
+  .btn.hidden { display:none; }
   .btn.danger  { background:var(--dmc-btn-stop-bg);    color:var(--dmc-btn-stop-color);    border-color:var(--dmc-btn-stop-border); }
   .btn.success { background:var(--dmc-btn-start-bg);   color:var(--dmc-btn-start-color);   border-color:var(--dmc-btn-start-border); }
   .btn.rst     { background:var(--dmc-btn-restart-bg); color:var(--dmc-btn-restart-color); border-color:var(--dmc-btn-restart-border); }
@@ -438,21 +442,26 @@ class DockerManagerCard extends HTMLElement {
     if (chev) { const c = `chev${this._expanded ? " open" : ""}`; if (chev.className !== c) chev.className = c; }
 
     // --- Start/Stop button ---
+    const isPaused = state === "paused";
     const ss = r.getElementById("ss");
     if (ss) {
-      const isPaused = state === "paused";
-      // Disable Start when container is paused (must unpause first)
-      const ssDisabled = isPaused;
       const ssCls  = isRunning ? "btn danger" : "btn success";
       const ssIcon = isRunning ? "mdi:stop" : "mdi:play";
       const ssLbl  = isRunning ? this.t("stop") : this.t("start");
-      const ssTitle = isPaused ? (this.t("unpause") + " →  " + this.t("start")) : ssLbl;
       const ssHTML = `<ha-icon icon="${ssIcon}"></ha-icon><span class="btn-lbl">${ssLbl}</span>`;
       if (ss.className !== ssCls) ss.className = ssCls;
       if (ss.innerHTML !== ssHTML) ss.innerHTML = ssHTML;
-      ss.disabled = ssDisabled;
-      ss.title = ssTitle;
+      // Disable Start when paused — must unpause first
+      ss.disabled = isPaused && !isRunning;
+      ss.title = (isPaused && !isRunning) ? this.t("unpause") + " → " + this.t("start") : ssLbl;
       ss._isRunning = isRunning;
+    }
+
+    // --- Restart button: hidden when stopped ---
+    const rst = r.getElementById("rst");
+    if (rst) {
+      const rstHidden = !isRunning && !isPaused;
+      rst.className = rstHidden ? "btn rst hidden" : "btn rst";
     }
 
     // --- Pause/Unpause button ---
@@ -460,10 +469,8 @@ class DockerManagerCard extends HTMLElement {
     const pauIco = r.getElementById("pau-ico");
     const pauLbl = r.getElementById("pau-lbl");
     if (pau) {
-      const isPaused = state === "paused";
       const pauseVisible = isRunning || isPaused;
-      pau.style.display = pauseVisible ? "" : "none";
-      const newCls = isPaused ? "btn pau active" : "btn pau";
+      const newCls = pauseVisible ? (isPaused ? "btn pau active" : "btn pau") : "btn pau hidden";
       if (pau.className !== newCls) pau.className = newCls;
       const pauIcon = isPaused ? "mdi:play-circle-outline" : "mdi:pause";
       const pauText = isPaused ? this.t("unpause") : this.t("pause");
