@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "2.4.0";
+const CARD_VERSION = "2.5.0";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -164,14 +164,18 @@ const STYLES = `
   .chevbtn { margin-left:auto; background:none; border:none; cursor:pointer; color:var(--dmc-text2); padding:4px; display:flex; align-items:center; flex-shrink:0; }
   .chev    { transition:transform .2s; }
   .chev.open { transform:rotate(180deg); }
-  .ctrls   { display:flex; align-items:center; gap:6px; padding:8px 12px 10px; }
-  .btn     { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:500; padding:5px 10px; border-radius:6px; border:1px solid var(--dmc-border); background:var(--dmc-bg); color:var(--dmc-text); cursor:pointer; transition:filter 0.15s; white-space:nowrap; }
-  .btn:hover:not([disabled]) { filter:brightness(0.92); }
-  .btn[disabled]  { opacity:0.55; cursor:not-allowed; }
+  .ctrls   { display:flex; align-items:center; gap:5px; padding:8px 10px 10px; flex-wrap:nowrap; }
+  .btn     { display:inline-flex; align-items:center; justify-content:center; gap:4px; font-size:11px; font-weight:500; padding:5px 8px; border-radius:6px; border:1px solid var(--dmc-border); background:var(--dmc-bg); color:var(--dmc-text); cursor:pointer; transition:filter 0.15s; white-space:nowrap; flex-shrink:0; min-width:32px; }
+  .btn ha-icon { --mdc-icon-size:16px; }
+  .btn .btn-lbl { display:none; }
+  @media (min-width:400px) { .btn .btn-lbl { display:inline; } }
+  .btn:hover:not([disabled]) { filter:brightness(1.12); }
+  .btn[disabled]  { opacity:0.4; cursor:not-allowed; pointer-events:none; }
   .btn.danger  { background:var(--dmc-btn-stop-bg);    color:var(--dmc-btn-stop-color);    border-color:var(--dmc-btn-stop-border); }
   .btn.success { background:var(--dmc-btn-start-bg);   color:var(--dmc-btn-start-color);   border-color:var(--dmc-btn-start-border); }
   .btn.rst     { background:var(--dmc-btn-restart-bg); color:var(--dmc-btn-restart-color); border-color:var(--dmc-btn-restart-border); }
-  .btn.pau     { background:var(--dmc-btn-pause-bg,rgba(255,255,255,0.09)); color:var(--dmc-btn-pause-color,#cfd8dc); border-color:var(--dmc-btn-pause-border,rgba(255,255,255,0.19)); }
+  .btn.pau     { background:var(--dmc-btn-pause-bg,rgba(255,152,0,0.13)); color:var(--dmc-btn-pause-color,#ffb74d); border-color:var(--dmc-btn-pause-border,rgba(255,183,77,0.4)); }
+  .btn.pau.active { background:var(--dmc-btn-unpause-bg,rgba(39,174,96,0.13)); color:var(--dmc-btn-unpause-color,#81c784); border-color:var(--dmc-btn-unpause-border,rgba(129,199,132,0.4)); }
   .btn.chk     { background:var(--dmc-btn-check-bg);   color:var(--dmc-btn-check-color);   border-color:var(--dmc-btn-check-border); }
   .btn.upnow   { background:var(--dmc-btn-update-bg);  color:var(--dmc-btn-update-color);  border-color:var(--dmc-btn-update-border); }
   .btn.uptd    { background:var(--dmc-btn-uptd-bg);    color:var(--dmc-btn-uptd-color);    border-color:var(--dmc-btn-uptd-border); pointer-events:none; }
@@ -296,9 +300,9 @@ class DockerManagerCard extends HTMLElement {
             </button>
           </div>
           <div class="ctrls">
-            <button class="btn" id="ss"></button>
-            <button class="btn rst" id="rst"></button>
-            <button class="btn pau" id="pau"></button>
+            <button class="btn" id="ss" title=""></button>
+            <button class="btn rst" id="rst" title="Restart"><ha-icon icon="mdi:restart"></ha-icon><span class="btn-lbl" id="rst-lbl"></span></button>
+            <button class="btn pau" id="pau" title="Pause"><ha-icon icon="mdi:pause" id="pau-ico"></ha-icon><span class="btn-lbl" id="pau-lbl"></span></button>
             <button class="btn ml" id="act"></button>
           </div>
           <div class="det" id="det">
@@ -344,8 +348,10 @@ class DockerManagerCard extends HTMLElement {
     set("l-started", this.t("started"));
     set("l-image",   this.t("image"));
     set("cname",     this._name());
-    const rst = r.getElementById("rst");
-    if (rst) rst.innerHTML = `<ha-icon icon="mdi:restart"></ha-icon>${this.t("restart")}`;
+    const rstLbl = r.getElementById("rst-lbl");
+    if (rstLbl) rstLbl.textContent = this.t("restart");
+    const rstBtn = r.getElementById("rst");
+    if (rstBtn) rstBtn.title = this.t("restart");
     const ico = r.getElementById("ico");
     if (ico) ico.innerHTML = this._config.icon
       ? `<ha-icon icon="${this._config.icon}" style="--mdc-icon-size:22px;color:white"></ha-icon>`
@@ -434,23 +440,36 @@ class DockerManagerCard extends HTMLElement {
     // --- Start/Stop button ---
     const ss = r.getElementById("ss");
     if (ss) {
+      const isPaused = state === "paused";
+      // Disable Start when container is paused (must unpause first)
+      const ssDisabled = isPaused;
       const ssCls  = isRunning ? "btn danger" : "btn success";
-      const ssHTML = `<ha-icon icon="${isRunning ? "mdi:stop" : "mdi:play"}"></ha-icon>${isRunning ? this.t("stop") : this.t("start")}`;
+      const ssIcon = isRunning ? "mdi:stop" : "mdi:play";
+      const ssLbl  = isRunning ? this.t("stop") : this.t("start");
+      const ssTitle = isPaused ? (this.t("unpause") + " →  " + this.t("start")) : ssLbl;
+      const ssHTML = `<ha-icon icon="${ssIcon}"></ha-icon><span class="btn-lbl">${ssLbl}</span>`;
       if (ss.className !== ssCls) ss.className = ssCls;
       if (ss.innerHTML !== ssHTML) ss.innerHTML = ssHTML;
+      ss.disabled = ssDisabled;
+      ss.title = ssTitle;
       ss._isRunning = isRunning;
     }
 
     // --- Pause/Unpause button ---
     const pau = r.getElementById("pau");
+    const pauIco = r.getElementById("pau-ico");
+    const pauLbl = r.getElementById("pau-lbl");
     if (pau) {
       const isPaused = state === "paused";
       const pauseVisible = isRunning || isPaused;
       pau.style.display = pauseVisible ? "" : "none";
-      const pauHTML = isPaused
-        ? `<ha-icon icon="mdi:play-pause"></ha-icon>${this.t("unpause")}`
-        : `<ha-icon icon="mdi:pause"></ha-icon>${this.t("pause")}`;
-      if (pau.innerHTML !== pauHTML) pau.innerHTML = pauHTML;
+      const newCls = isPaused ? "btn pau active" : "btn pau";
+      if (pau.className !== newCls) pau.className = newCls;
+      const pauIcon = isPaused ? "mdi:play-circle-outline" : "mdi:pause";
+      const pauText = isPaused ? this.t("unpause") : this.t("pause");
+      if (pauIco && pauIco.getAttribute("icon") !== pauIcon) pauIco.setAttribute("icon", pauIcon);
+      if (pauLbl && pauLbl.textContent !== pauText) pauLbl.textContent = pauText;
+      if (pau.title !== pauText) pau.title = pauText;
       pau._isPaused = isPaused;
     }
 
@@ -467,10 +486,11 @@ class DockerManagerCard extends HTMLElement {
     }
     const act = r.getElementById("act");
     if (act) {
-      const aHTML = `<ha-icon icon="${aIco}"></ha-icon>${aLbl}`;
+      const aHTML = `<ha-icon icon="${aIco}"></ha-icon><span class="btn-lbl">${aLbl}</span>`;
       if (act.className !== aCls) act.className = aCls;
       if (act.innerHTML !== aHTML) act.innerHTML = aHTML;
       act.disabled      = aDis;
+      act.title         = aLbl;
       act._updateAvail  = updateAvail;
       act._neverChecked = neverChecked;
     }
