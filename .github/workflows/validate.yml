@@ -28,10 +28,30 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Create Release
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: docker-manager-card.js
           generate_release_notes: true
+          body: |
+            ## Docker Manager Card v${{ steps.version.outputs.VERSION }}
+
+            ### Installation via HACS
+            HACS → Frontend → Search "Docker Manager Card"
+
+            ### Manual installation
+            Download `docker-manager-card.js` and copy to `config/www/`.
+
+            Add to Lovelace resources:
+            ```yaml
+            resources:
+              - url: /local/docker-manager-card.js
+                type: module
+            ```
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

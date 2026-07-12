@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "2.8.0";
+const CARD_VERSION = "2.9.0";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -198,6 +198,15 @@ const STYLES = `
   .ival  { color:var(--dmc-text); font-weight:500; font-size:12px; max-width:60%; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .updtxt { padding:8px 16px 12px; font-size:11px; color:var(--dmc-text2); border-top:1px solid var(--dmc-border); }
   .err { padding:16px; color:var(--error-color,red); font-size:13px; }
+  /* Confirmation dialog */
+  .dmc-dialog-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; display:flex; align-items:center; justify-content:center; }
+  .dmc-dialog { background:var(--card-background-color,#1e2130); border-radius:14px; padding:20px 22px; min-width:240px; max-width:320px; box-shadow:0 8px 32px rgba(0,0,0,0.4); }
+  .dmc-dialog-title { font-size:14px; font-weight:600; color:var(--primary-text-color); margin-bottom:8px; }
+  .dmc-dialog-msg { font-size:12px; color:var(--secondary-text-color); margin-bottom:18px; line-height:1.5; }
+  .dmc-dialog-btns { display:flex; gap:8px; justify-content:flex-end; }
+  .dmc-btn-cancel { padding:5px 14px; border-radius:6px; border:1px solid var(--divider-color); background:transparent; color:var(--secondary-text-color); font-size:12px; cursor:pointer; }
+  .dmc-btn-confirm { padding:5px 14px; border-radius:6px; border:none; background:#ef5350; color:white; font-size:12px; font-weight:500; cursor:pointer; }
+  .dmc-btn-confirm.safe { background:#1565c0; }
 `;
 
 const WHALE = `<svg viewBox="0 0 24 18" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#fff"><rect x="0" y="0" width="4" height="3" rx="0.5"/><rect x="5" y="0" width="4" height="3" rx="0.5"/><rect x="10" y="0" width="4" height="3" rx="0.5"/><rect x="0" y="4" width="4" height="3" rx="0.5"/><rect x="5" y="4" width="4" height="3" rx="0.5"/><rect x="10" y="4" width="4" height="3" rx="0.5"/><rect x="15" y="4" width="4" height="3" rx="0.5"/><rect x="5" y="8" width="4" height="3" rx="0.5"/><path d="M22,9 C21.5,7 20,6.5 19,7 C18.5,5 17,4 15.5,4.5 C15,3 13.5,2.5 12,3 L12,15 C13,16 20,16 22,13 C23,11.5 22.5,10 22,9 Z"/></svg>`;
@@ -259,6 +268,35 @@ class DockerManagerCard extends HTMLElement {
     return m ? m[1].replace(/_/g, " ") : this._config.entity;
   }
   _call(domain, service, data) { this._hass?.callService(domain, service, data); }
+
+  /**
+   * Show a confirmation dialog inside the shadow DOM.
+   * Returns a Promise<boolean> — true if confirmed, false if cancelled.
+   */
+  _confirm(title, message, dangerLabel = "OK", safe = false) {
+    return new Promise(resolve => {
+      const overlay = document.createElement("div");
+      overlay.className = "dmc-dialog-overlay";
+      overlay.innerHTML = `
+        <div class="dmc-dialog">
+          <div class="dmc-dialog-title">${title}</div>
+          <div class="dmc-dialog-msg">${message}</div>
+          <div class="dmc-dialog-btns">
+            <button class="dmc-btn-cancel" id="dmc-cancel">Cancel</button>
+            <button class="dmc-btn-confirm${safe ? " safe" : ""}" id="dmc-ok">${dangerLabel}</button>
+          </div>
+        </div>
+      `;
+      this.shadowRoot.appendChild(overlay);
+      const cleanup = (result) => {
+        overlay.remove();
+        resolve(result);
+      };
+      overlay.querySelector("#dmc-cancel").addEventListener("click", () => cleanup(false));
+      overlay.querySelector("#dmc-ok").addEventListener("click", () => cleanup(true));
+      overlay.addEventListener("click", e => { if (e.target === overlay) cleanup(false); });
+    });
+  }
 
   // Normalize state: Docker returns "exited" but we display as "stopped"
   _normalizeState(raw) {
@@ -538,6 +576,16 @@ class DockerManagerCard extends HTMLElement {
       const isRunning = r.getElementById("ss")?._isRunning;
       const targetState = isRunning ? "stopped" : "running";
 
+      // Confirm before stopping
+      if (isRunning) {
+        const ok = await this._confirm(
+          this.t("stop") + " " + this._name() + "?",
+          "The container will be stopped. Running processes will be interrupted.",
+          this.t("stop")
+        );
+        if (!ok) return;
+      }
+
       // Cancel any ongoing poll (previous action not yet complete)
       const token = Symbol();
       this._pollToken = token;
@@ -657,6 +705,13 @@ class DockerManagerCard extends HTMLElement {
       const neverChecked = act?._neverChecked;
 
       if (updateAvail && !neverChecked) {
+        const ok = await this._confirm(
+          "Update " + this._name() + "?",
+          "The container will be stopped, the image pulled, and the container recreated. This may take a few minutes.",
+          "Update",
+          true  // safe = blue button
+        );
+        if (!ok) return;
         this._updState = "updating";
         this._call("update", "install", { entity_id: ids.update });
         const steps = [
@@ -815,6 +870,38 @@ class DockerOverviewCard extends HTMLElement {
     return map[lang] || map.en;
   }
 
+  /**
+   * Handle tap_action / hold_action / double_tap_action
+   * Supported: navigate, call-service, url, more-info, none
+   * Usage in YAML:
+   *   tap_action:
+   *     action: navigate
+   *     navigation_path: /lovelace/docker
+   */
+  _handleAction(actionConfig) {
+    if (!actionConfig || !this._hass) return;
+    const action = actionConfig.action || "none";
+    if (action === "none") return;
+    if (action === "navigate") {
+      window.history.pushState(null, "", actionConfig.navigation_path || "/");
+      window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+    } else if (action === "call-service") {
+      const [domain, service] = (actionConfig.service || "").split(".");
+      this._hass.callService(domain, service, actionConfig.service_data || {});
+    } else if (action === "url") {
+      window.open(actionConfig.url_path || actionConfig.url, "_blank");
+    } else if (action === "more-info") {
+      const entityId = actionConfig.entity || this._ids().total;
+      this.dispatchEvent(new CustomEvent("hass-more-info", {
+        bubbles: true, composed: true, detail: { entityId },
+      }));
+    } else if (action === "fire-dom-event") {
+      this.dispatchEvent(new CustomEvent("ll-custom", {
+        bubbles: true, composed: true, detail: actionConfig,
+      }));
+    }
+  }
+
   _initDOM() {
     const l     = this._getLabels();
     const title = this._config.name || "Docker";
@@ -845,6 +932,25 @@ class DockerOverviewCard extends HTMLElement {
     `;
     this._initialized = true;
     this._syncCardModStyles();
+
+    // Tap action on the header/card area (not on prune button)
+    const card = this.shadowRoot.querySelector(".card");
+    if (card) {
+      let _holdTimer = null;
+      card.addEventListener("click", (e) => {
+        if (e.target.closest("button")) return; // don't intercept prune
+        this._handleAction(this._config.tap_action || { action: "none" });
+      });
+      card.addEventListener("mousedown", () => {
+        _holdTimer = setTimeout(() => {
+          this._handleAction(this._config.hold_action || { action: "none" });
+        }, 500);
+      });
+      card.addEventListener("mouseup", () => clearTimeout(_holdTimer));
+      card.addEventListener("mouseleave", () => clearTimeout(_holdTimer));
+      card.style.cursor = (this._config.tap_action?.action && this._config.tap_action.action !== "none")
+        ? "pointer" : "default";
+    }
 
     const pruneBtn = this.shadowRoot.getElementById("prune-btn");
     pruneBtn?.addEventListener("click", async () => {
@@ -900,3 +1006,150 @@ console.info(
   "background:#1A73E8;color:white;padding:2px 4px;border-radius:3px 0 0 3px;font-weight:bold",
   "background:#424242;color:white;padding:2px 4px;border-radius:0 3px 3px 0"
 );
+
+// ---------------------------------------------------------------------------
+// docker-multi-overview-card — Aggregate multiple Docker hosts in one card
+// ---------------------------------------------------------------------------
+const MULTI_STYLES = `
+  :host {
+    display: block;
+    --dmc-bg:     #cecece40;
+    --dmc-text:   var(--primary-text-color, #212121);
+    --dmc-text2:  var(--secondary-text-color, #757575);
+    --dmc-border: var(--divider-color, rgba(0,0,0,0.12));
+    --dmc-radius: var(--ha-card-border-radius, 12px);
+  }
+  ha-card { overflow:hidden; font-family:var(--primary-font-family,Roboto,sans-serif); border-radius:var(--dmc-radius); }
+  .card { background:var(--dmc-bg); }
+  .hdr { display:flex; align-items:center; gap:8px; padding:10px 14px 8px; }
+  .htitle { font-size:14px; font-weight:500; color:var(--dmc-text); flex:1; }
+  .host-row { display:flex; align-items:center; gap:6px; padding:4px 14px; border-top:0.5px solid var(--dmc-border); }
+  .host-row:last-child { padding-bottom:10px; }
+  .host-name { font-size:12px; color:var(--dmc-text); font-weight:500; flex-shrink:0; min-width:80px; }
+  .sep { color:var(--dmc-text2); opacity:0.3; font-size:11px; flex-shrink:0; }
+  .stat { display:inline-flex; align-items:baseline; gap:2px; flex-shrink:0; }
+  .sv { font-size:13px; font-weight:700; }
+  .sl { font-size:10px; color:var(--dmc-text2); }
+  .sv.total   { color:var(--primary-text-color); }
+  .sv.running { color:#64b5f6; }
+  .sv.stopped { color:#ef5350; }
+  .sv.paused  { color:#ffa726; }
+  .sv.images  { color:#90caf9; }
+  .spacer { flex:1; }
+  .ver { font-size:10px; color:var(--dmc-text2); opacity:0.5; }
+  .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .dot.ok   { background:#64b5f6; }
+  .dot.warn { background:#ef5350; }
+`;
+
+class DockerMultiOverviewCard extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this._config = {};
+    this._hass = null;
+  }
+
+  setConfig(config) {
+    if (!config.hosts || !Array.isArray(config.hosts)) {
+      throw new Error("docker-multi-overview-card: 'hosts' array is required");
+    }
+    this._config = config;
+    this._render();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    this._render();
+  }
+
+  _s(id) {
+    if (!this._hass || !id) return null;
+    const e = this._hass.states[id];
+    return e ? e.state : null;
+  }
+
+  _idsFor(host) {
+    const suffix = host.suffix || "";
+    const p = host.prefix || "docker";
+    return {
+      total:   `sensor.${p}_containers_total${suffix}`,
+      running: `sensor.${p}_containers_running${suffix}`,
+      stopped: `sensor.${p}_containers_stopped${suffix}`,
+      paused:  `sensor.${p}_containers_paused${suffix}`,
+      images:  `sensor.${p}_images_total${suffix}`,
+      version: `sensor.${p}_docker_version${suffix}`,
+    };
+  }
+
+  _render() {
+    if (!this._hass) return;
+    const root = this.shadowRoot;
+    const title = this._config.name || "Docker Hosts";
+    const hosts = this._config.hosts || [];
+
+    const rowsHTML = hosts.map(host => {
+      const ids = this._idsFor(host);
+      const total   = this._s(ids.total)   || "—";
+      const running = this._s(ids.running) || "—";
+      const stopped = this._s(ids.stopped) || "—";
+      const paused  = this._s(ids.paused)  || "—";
+      const images  = this._s(ids.images)  || "—";
+      const version = this._s(ids.version) || "";
+      const isOnline = total !== "—";
+      const name = host.name || host.prefix || "Docker";
+
+      return `
+        <div class="host-row">
+          <span class="dot ${isOnline ? "ok" : "warn"}"></span>
+          <span class="host-name">${name}</span>
+          <span class="sep">|</span>
+          <span class="stat"><span class="sv total">${total}</span><span class="sl">tot</span></span>
+          <span class="sep">·</span>
+          <span class="stat"><span class="sv running">${running}</span><span class="sl">up</span></span>
+          <span class="sep">·</span>
+          <span class="stat"><span class="sv stopped">${stopped}</span><span class="sl">dn</span></span>
+          ${parseInt(paused) > 0 ? `<span class="sep">·</span><span class="stat"><span class="sv paused">${paused}</span><span class="sl">pau</span></span>` : ""}
+          <span class="sep">·</span>
+          <span class="stat"><span class="sv images">${images}</span><span class="sl">img</span></span>
+          <span class="spacer"></span>
+          ${version ? `<span class="ver">v${version}</span>` : ""}
+        </div>`;
+    }).join("");
+
+    root.innerHTML = `
+      <style>${MULTI_STYLES}</style>
+      <ha-card>
+        <div class="card">
+          <div class="hdr">
+            <ha-icon icon="mdi:server-network" style="--mdc-icon-size:18px;color:#1A73E8"></ha-icon>
+            <span class="htitle">${title}</span>
+          </div>
+          ${rowsHTML}
+        </div>
+      </ha-card>
+    `;
+  }
+
+  getCardSize() { return this._config.hosts?.length || 2; }
+
+  static getStubConfig() {
+    return {
+      name: "Docker Hosts",
+      hosts: [
+        { name: "Local", prefix: "docker", suffix: "" },
+        { name: "Remote", prefix: "docker", suffix: "_2" },
+      ],
+    };
+  }
+}
+
+customElements.define("docker-multi-overview-card", DockerMultiOverviewCard);
+
+window.customCards.push({
+  type: "docker-multi-overview-card",
+  name: "Docker Multi-Host Overview",
+  description: "Aggregate stats from multiple Docker hosts",
+  preview: false,
+  documentationURL: "https://github.com/jeanphic/ha-docker-manager-card",
+});
