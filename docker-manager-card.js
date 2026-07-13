@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "3.0.0";
+const CARD_VERSION = "3.0.1";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -1017,7 +1017,7 @@ const MULTI_STYLES = `
     --dmc-text:   var(--primary-text-color, #212121);
     --dmc-text2:  var(--secondary-text-color, #757575);
     --dmc-border: var(--divider-color, rgba(0,0,0,0.12));
-    --dmc-bg2:    rgba(255,255,255,0.07);
+    --dmc-bg2:             var(--secondary-background-color, rgba(255,255,255,0.08));
     --dmc-radius: var(--ha-card-border-radius, 12px);
     --dmc-btn-prune-bg:    rgba(255,152,0,0.13);
     --dmc-btn-prune-color: #ffb74d;
