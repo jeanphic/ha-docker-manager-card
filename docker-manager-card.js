@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "2.9.0";
+const CARD_VERSION = "3.0.0";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -1008,7 +1008,7 @@ console.info(
 );
 
 // ---------------------------------------------------------------------------
-// docker-multi-overview-card — Aggregate multiple Docker hosts in one card
+// docker-multi-overview-card — Multiple Docker hosts in one card
 // ---------------------------------------------------------------------------
 const MULTI_STYLES = `
   :host {
@@ -1017,29 +1017,38 @@ const MULTI_STYLES = `
     --dmc-text:   var(--primary-text-color, #212121);
     --dmc-text2:  var(--secondary-text-color, #757575);
     --dmc-border: var(--divider-color, rgba(0,0,0,0.12));
+    --dmc-bg2:    rgba(255,255,255,0.07);
     --dmc-radius: var(--ha-card-border-radius, 12px);
+    --dmc-btn-prune-bg:    rgba(255,152,0,0.13);
+    --dmc-btn-prune-color: #ffb74d;
+    --dmc-btn-prune-border:rgba(255,183,77,0.4);
   }
   ha-card { overflow:hidden; font-family:var(--primary-font-family,Roboto,sans-serif); border-radius:var(--dmc-radius); }
   .card { background:var(--dmc-bg); }
-  .hdr { display:flex; align-items:center; gap:8px; padding:10px 14px 8px; }
-  .htitle { font-size:14px; font-weight:500; color:var(--dmc-text); flex:1; }
-  .host-row { display:flex; align-items:center; gap:6px; padding:4px 14px; border-top:0.5px solid var(--dmc-border); }
-  .host-row:last-child { padding-bottom:10px; }
-  .host-name { font-size:12px; color:var(--dmc-text); font-weight:500; flex-shrink:0; min-width:80px; }
-  .sep { color:var(--dmc-text2); opacity:0.3; font-size:11px; flex-shrink:0; }
-  .stat { display:inline-flex; align-items:baseline; gap:2px; flex-shrink:0; }
-  .sv { font-size:13px; font-weight:700; }
-  .sl { font-size:10px; color:var(--dmc-text2); }
-  .sv.total   { color:var(--primary-text-color); }
-  .sv.running { color:#64b5f6; }
-  .sv.stopped { color:#ef5350; }
-  .sv.paused  { color:#ffa726; }
-  .sv.images  { color:#90caf9; }
-  .spacer { flex:1; }
-  .ver { font-size:10px; color:var(--dmc-text2); opacity:0.5; }
-  .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-  .dot.ok   { background:#64b5f6; }
-  .dot.warn { background:#ef5350; }
+  .main-hdr { display:flex; align-items:center; gap:8px; padding:9px 14px; border-bottom:0.5px solid var(--dmc-border); }
+  .main-title { font-size:13px; font-weight:500; color:var(--dmc-text); flex:1; }
+  .host { border-bottom:0.5px solid var(--dmc-border); padding:8px 14px; }
+  .host:last-of-type { border-bottom:none; }
+  .host-hdr { display:flex; align-items:center; gap:7px; margin-bottom:6px; }
+  .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .dot.on  { background:#64b5f6; }
+  .dot.off { background:#ef5350; }
+  .hname { font-size:12px; font-weight:500; color:var(--dmc-text); }
+  .stats { display:flex; gap:5px; }
+  .gc { background:var(--dmc-bg2); border-radius:7px; padding:5px 6px; text-align:center; flex:1; }
+  .gv { font-size:16px; font-weight:700; line-height:1.1; }
+  .gl { font-size:10px; color:var(--dmc-text2); margin-top:2px; }
+  .gv.total   { color:var(--dmc-text); }
+  .gv.running { color:#64b5f6; }
+  .gv.stopped { color:#ef5350; }
+  .gv.paused  { color:#ffa726; }
+  .gv.images  { color:#90caf9; }
+  .unreachable { font-size:11px; color:#ef5350; padding:2px 0 4px; }
+  .footer { display:flex; justify-content:flex-end; padding:6px 14px 8px; border-top:0.5px solid var(--dmc-border); }
+  .btn { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:500; padding:3px 8px; border-radius:5px; cursor:pointer; background:var(--dmc-btn-prune-bg); color:var(--dmc-btn-prune-color); border:1px solid var(--dmc-btn-prune-border); transition:filter 0.15s; }
+  .btn:hover { filter:brightness(1.2); }
+  .btn[disabled] { opacity:0.5; cursor:not-allowed; }
+  ha-icon { --mdc-icon-size:14px; }
 `;
 
 class DockerMultiOverviewCard extends HTMLElement {
@@ -1088,47 +1097,79 @@ class DockerMultiOverviewCard extends HTMLElement {
     const title = this._config.name || "Docker Hosts";
     const hosts = this._config.hosts || [];
 
-    const rowsHTML = hosts.map(host => {
-      const ids = this._idsFor(host);
-      const total   = this._s(ids.total)   || "—";
+    const hostsHTML = hosts.map(host => {
+      const ids     = this._idsFor(host);
+      const total   = this._s(ids.total);
       const running = this._s(ids.running) || "—";
       const stopped = this._s(ids.stopped) || "—";
       const paused  = this._s(ids.paused)  || "—";
       const images  = this._s(ids.images)  || "—";
       const version = this._s(ids.version) || "";
-      const isOnline = total !== "—";
-      const name = host.name || host.prefix || "Docker";
+      const isOnline = total !== null && total !== undefined;
+      const name    = host.name || host.prefix || "Docker";
+      const nameStr = version ? `${name} — Docker v${version}` : name;
+
+      if (!isOnline) {
+        return `
+          <div class="host">
+            <div class="host-hdr">
+              <span class="dot off"></span>
+              <span class="hname">${name}</span>
+            </div>
+            <div class="unreachable">Unreachable — check connection</div>
+          </div>`;
+      }
 
       return `
-        <div class="host-row">
-          <span class="dot ${isOnline ? "ok" : "warn"}"></span>
-          <span class="host-name">${name}</span>
-          <span class="sep">|</span>
-          <span class="stat"><span class="sv total">${total}</span><span class="sl">tot</span></span>
-          <span class="sep">·</span>
-          <span class="stat"><span class="sv running">${running}</span><span class="sl">up</span></span>
-          <span class="sep">·</span>
-          <span class="stat"><span class="sv stopped">${stopped}</span><span class="sl">dn</span></span>
-          ${parseInt(paused) > 0 ? `<span class="sep">·</span><span class="stat"><span class="sv paused">${paused}</span><span class="sl">pau</span></span>` : ""}
-          <span class="sep">·</span>
-          <span class="stat"><span class="sv images">${images}</span><span class="sl">img</span></span>
-          <span class="spacer"></span>
-          ${version ? `<span class="ver">v${version}</span>` : ""}
+        <div class="host">
+          <div class="host-hdr">
+            <span class="dot on"></span>
+            <span class="hname">${nameStr}</span>
+          </div>
+          <div class="stats">
+            <div class="gc"><div class="gv total">${total || "—"}</div><div class="gl">total</div></div>
+            <div class="gc"><div class="gv running">${running}</div><div class="gl">up</div></div>
+            <div class="gc"><div class="gv stopped">${stopped}</div><div class="gl">down</div></div>
+            <div class="gc"><div class="gv paused">${paused}</div><div class="gl">paused</div></div>
+            <div class="gc"><div class="gv images">${images}</div><div class="gl">images</div></div>
+          </div>
         </div>`;
     }).join("");
+
+    // Prune button — fires on first host by default, or configurable via prune_host index
+    const pruneHost = hosts[this._config.prune_host || 0];
+    const pruneLabel = "Prune all";
 
     root.innerHTML = `
       <style>${MULTI_STYLES}</style>
       <ha-card>
         <div class="card">
-          <div class="hdr">
+          <div class="main-hdr">
             <ha-icon icon="mdi:server-network" style="--mdc-icon-size:18px;color:#1A73E8"></ha-icon>
-            <span class="htitle">${title}</span>
+            <span class="main-title">${title}</span>
           </div>
-          ${rowsHTML}
+          ${hostsHTML}
+          <div class="footer">
+            <button class="btn" id="prune-btn">
+              <ha-icon icon="mdi:broom"></ha-icon>${pruneLabel}
+            </button>
+          </div>
         </div>
       </ha-card>
     `;
+
+    // Prune button handler
+    root.getElementById("prune-btn")?.addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.innerHTML = `<ha-icon icon="mdi:loading"></ha-icon>…`;
+      await this._hass.callService("docker_manager", "prune_images", {
+        all_unused: this._config.all_unused || false,
+      });
+      await new Promise(res => setTimeout(res, 2000));
+      btn.disabled = false;
+      btn.innerHTML = `<ha-icon icon="mdi:broom"></ha-icon>${pruneLabel}`;
+    });
   }
 
   getCardSize() { return this._config.hosts?.length || 2; }
