@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "3.0.1";
+const CARD_VERSION = "3.0.2";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -630,13 +630,18 @@ class DockerManagerCard extends HTMLElement {
 
     r.getElementById("pau")?.addEventListener("click", async () => {
       const pau = r.getElementById("pau");
+      // Prevent double-click: disable button immediately
+      if (pau?.disabled) return;
+      pau.disabled = true;
+
       const isPaused = pau?._isPaused;
       const token = Symbol();
       this._pollToken = token;
       this._localState = isPaused ? "running" : "paused";
       this._render();
       this._call("button", "press", { entity_id: ids.pause_btn });
-      // Poll until real state matches
+
+      // Wait for Docker to actually apply the action before allowing next click
       const target = isPaused ? "running" : "paused";
       const started = Date.now();
       const poll = async () => {
@@ -651,7 +656,8 @@ class DockerManagerCard extends HTMLElement {
           await new Promise(res => setTimeout(res, 1000)); poll();
         }
       };
-      await new Promise(res => setTimeout(res, 800));
+      // Give Docker 1s to apply before polling
+      await new Promise(res => setTimeout(res, 1000));
       poll();
     });
 
@@ -1017,7 +1023,7 @@ const MULTI_STYLES = `
     --dmc-text:   var(--primary-text-color, #212121);
     --dmc-text2:  var(--secondary-text-color, #757575);
     --dmc-border: var(--divider-color, rgba(0,0,0,0.12));
-    --dmc-bg2:             var(--secondary-background-color, rgba(255,255,255,0.08));
+    --dmc-bg2:    rgba(0,0,0,0.35);
     --dmc-radius: var(--ha-card-border-radius, 12px);
     --dmc-btn-prune-bg:    rgba(255,152,0,0.13);
     --dmc-btn-prune-color: #ffb74d;
