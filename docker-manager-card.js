@@ -5,17 +5,17 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "3.0.2";
+const CARD_VERSION = "3.1.0";
 
 // ---------------------------------------------------------------------------
 // i18n
 // ---------------------------------------------------------------------------
 const TRANSLATIONS = {
-  en: { running:"Running", stopped:"Stopped", paused:"Paused", restarting:"Restarting", dead:"Dead", created:"Created", removing:"Removing", stop:"Stop", start:"Start", restart:"Restart", pause:"Pause", unpause:"Resume", check_update:"Check", update_now:"Update", up_to_date:"Up to date", checking:"Checking…", never_checked:"Never checked", last_checked:"Last checked", update_available:"update available", cpu:"CPU", memory:"Memory", memory_pct:"Memory %", net_up:"Net ↑", net_down:"Net ↓", health:"Health", started:"Started", image:"Image", step_pull:"Pulling image…", step_stop:"Stopping…", step_remove:"Removing…", step_create:"Creating…", step_start:"Starting…", step_done:"Update complete", no_entity:"Entity not found" },
-  fr: { running:"En cours", stopped:"Arrêté", paused:"En pause", restarting:"Redémarrage", dead:"Mort", created:"Créé", removing:"Suppression", stop:"Stop", start:"Start", restart:"Restart", pause:"Pause", unpause:"Resume", check_update:"Check", update_now:"Update", up_to_date:"Up to date", checking:"Vérification…", never_checked:"Jamais vérifié", last_checked:"Dernière vérification", update_available:"mise à jour disponible", cpu:"CPU", memory:"Mémoire", memory_pct:"Mémoire %", net_up:"Réseau ↑", net_down:"Réseau ↓", health:"Santé", started:"Démarré le", image:"Image", step_pull:"Téléchargement…", step_stop:"Arrêt…", step_remove:"Suppression…", step_create:"Création…", step_start:"Démarrage…", step_done:"Mise à jour terminée", no_entity:"Entité introuvable" },
-  de: { running:"Läuft", stopped:"Gestoppt", paused:"Pausiert", restarting:"Neustart", dead:"Tot", created:"Erstellt", removing:"Wird entfernt", stop:"Stop", start:"Start", restart:"Restart", pause:"Pause", unpause:"Resume", check_update:"Check", update_now:"Update", up_to_date:"Up to date", checking:"Prüfe…", never_checked:"Nie geprüft", last_checked:"Zuletzt geprüft", update_available:"Update verfügbar", cpu:"CPU", memory:"Speicher", memory_pct:"Speicher %", net_up:"Netz ↑", net_down:"Netz ↓", health:"Status", started:"Gestartet", image:"Image", step_pull:"Image laden…", step_stop:"Stoppe…", step_remove:"Entferne…", step_create:"Erstelle…", step_start:"Starte…", step_done:"Aktualisierung abgeschlossen", no_entity:"Entität nicht gefunden" },
-  es: { running:"Ejecutando", stopped:"Detenido", paused:"En pausa", restarting:"Reiniciando", dead:"Muerto", created:"Creado", removing:"Eliminando", stop:"Stop", start:"Start", restart:"Restart", pause:"Pausar", unpause:"Resume", check_update:"Check", update_now:"Update", up_to_date:"Up to date", checking:"Verificando…", never_checked:"Nunca verificado", last_checked:"Última verificación", update_available:"actualización disponible", cpu:"CPU", memory:"Memoria", memory_pct:"Memoria %", net_up:"Red ↑", net_down:"Red ↓", health:"Salud", started:"Iniciado", image:"Imagen", step_pull:"Descargando…", step_stop:"Deteniendo…", step_remove:"Eliminando…", step_create:"Creando…", step_start:"Iniciando…", step_done:"Actualización completada", no_entity:"Entidad no encontrada" },
-  nl: { running:"Actief", stopped:"Gestopt", paused:"Gepauzeerd", restarting:"Herstart", dead:"Dood", created:"Aangemaakt", removing:"Verwijderen", stop:"Stop", start:"Start", restart:"Restart", pause:"Pauzeren", unpause:"Resume", check_update:"Check", update_now:"Update", up_to_date:"Up to date", checking:"Controleren…", never_checked:"Nooit gecontroleerd", last_checked:"Laatste controle", update_available:"update beschikbaar", cpu:"CPU", memory:"Geheugen", memory_pct:"Geheugen %", net_up:"Net ↑", net_down:"Net ↓", health:"Status", started:"Gestart", image:"Image", step_pull:"Image laden…", step_stop:"Stoppen…", step_remove:"Verwijderen…", step_create:"Aanmaken…", step_start:"Starten…", step_done:"Bijwerken voltooid", no_entity:"Entiteit niet gevonden" },
+  en: { running:"Running", stopped:"Stopped", paused:"Paused", restarting:"Restarting", dead:"Dead", created:"Created", removing:"Removing", stop:"Stop", start:"Start", restart:"Restart", pause:"Pause", unpause:"Resume", check_update:"Check", update_now:"Update", up_to_date:"Up to date", checking:"Checking…", never_checked:"Never checked", last_checked:"Last checked", update_available:"update available", cpu:"CPU", memory:"Memory", memory_pct:"Memory %", net_up:"Net ↑", net_down:"Net ↓", net_total_up:"Net ↑ tot.", net_total_down:"Net ↓ tot.", net_total_up:"Net ↑ total", net_total_down:"Net ↓ total", health:"Health", started:"Started", image:"Image", step_pull:"Pulling image…", step_stop:"Stopping…", step_remove:"Removing…", step_create:"Creating…", step_start:"Starting…", step_done:"Update complete", no_entity:"Entity not found" },
+  fr: { running:"En cours", stopped:"Arrêté", paused:"En pause", restarting:"Redémarrage", dead:"Mort", created:"Créé", removing:"Suppression", stop:"Stop", start:"Start", restart:"Restart", pause:"Pause", unpause:"Resume", check_update:"Check", update_now:"Update", up_to_date:"Up to date", checking:"Vérification…", never_checked:"Jamais vérifié", last_checked:"Dernière vérification", update_available:"mise à jour disponible", cpu:"CPU", memory:"Mémoire", memory_pct:"Mémoire %", net_up:"Réseau ↑", net_down:"Réseau ↓", net_total_up:"Réseau ↑ total", net_total_down:"Réseau ↓ total", health:"Santé", started:"Démarré le", image:"Image", step_pull:"Téléchargement…", step_stop:"Arrêt…", step_remove:"Suppression…", step_create:"Création…", step_start:"Démarrage…", step_done:"Mise à jour terminée", no_entity:"Entité introuvable" },
+  de: { running:"Läuft", stopped:"Gestoppt", paused:"Pausiert", restarting:"Neustart", dead:"Tot", created:"Erstellt", removing:"Wird entfernt", stop:"Stop", start:"Start", restart:"Restart", pause:"Pause", unpause:"Resume", check_update:"Check", update_now:"Update", up_to_date:"Up to date", checking:"Prüfe…", never_checked:"Nie geprüft", last_checked:"Zuletzt geprüft", update_available:"Update verfügbar", cpu:"CPU", memory:"Speicher", memory_pct:"Speicher %", net_up:"Netz ↑", net_down:"Netz ↓", net_total_up:"Netz ↑ ges.", net_total_down:"Netz ↓ ges.", health:"Status", started:"Gestartet", image:"Image", step_pull:"Image laden…", step_stop:"Stoppe…", step_remove:"Entferne…", step_create:"Erstelle…", step_start:"Starte…", step_done:"Aktualisierung abgeschlossen", no_entity:"Entität nicht gefunden" },
+  es: { running:"Ejecutando", stopped:"Detenido", paused:"En pausa", restarting:"Reiniciando", dead:"Muerto", created:"Creado", removing:"Eliminando", stop:"Stop", start:"Start", restart:"Restart", pause:"Pausar", unpause:"Resume", check_update:"Check", update_now:"Update", up_to_date:"Up to date", checking:"Verificando…", never_checked:"Nunca verificado", last_checked:"Última verificación", update_available:"actualización disponible", cpu:"CPU", memory:"Memoria", memory_pct:"Memoria %", net_up:"Red ↑", net_down:"Red ↓", net_total_up:"Red ↑ total", net_total_down:"Red ↓ total", health:"Salud", started:"Iniciado", image:"Imagen", step_pull:"Descargando…", step_stop:"Deteniendo…", step_remove:"Eliminando…", step_create:"Creando…", step_start:"Iniciando…", step_done:"Actualización completada", no_entity:"Entidad no encontrada" },
+  nl: { running:"Actief", stopped:"Gestopt", paused:"Gepauzeerd", restarting:"Herstart", dead:"Dood", created:"Aangemaakt", removing:"Verwijderen", stop:"Stop", start:"Start", restart:"Restart", pause:"Pauzeren", unpause:"Resume", check_update:"Check", update_now:"Update", up_to_date:"Up to date", checking:"Controleren…", never_checked:"Nooit gecontroleerd", last_checked:"Laatste controle", update_available:"update beschikbaar", cpu:"CPU", memory:"Geheugen", memory_pct:"Geheugen %", net_up:"Net ↑", net_down:"Net ↓", net_total_up:"Net ↑ tot.", net_total_down:"Net ↓ tot.", net_total_up:"Net ↑ total", net_total_down:"Net ↓ total", health:"Status", started:"Gestart", image:"Image", step_pull:"Image laden…", step_stop:"Stoppen…", step_remove:"Verwijderen…", step_create:"Aanmaken…", step_start:"Starten…", step_done:"Bijwerken voltooid", no_entity:"Entiteit niet gevonden" },
 };
 
 function getLang(lang) {
@@ -61,6 +61,7 @@ function discoverEntities(hass, baseEntity) {
     state: baseEntity, image: find("sensor","image"), cpu: find("sensor","cpu"),
     memory: memMb, memory_pct: memPct,
     net_up: find("sensor","network_up"), net_down: find("sensor","network_down"),
+    net_total_up: find("sensor","network_total_up"), net_total_down: find("sensor","network_total_down"),
     health: find("sensor","health"), started: find("sensor","started_at"),
     sw: find("switch","container"), restart_btn: find("button","restart"),
     pause_btn: find("button","pause"),
@@ -187,7 +188,7 @@ const STYLES = `
   .sep  { border:none; border-top:1px solid var(--dmc-border); margin:0; }
   .det  { display:none; flex-direction:column; }
   .det.open { display:flex; }
-  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:12px 16px; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:10px 14px; }
   .gc   { background:var(--dmc-bg2); border-radius:8px; padding:8px 10px; }
   .gl   { font-size:11px; color:var(--dmc-text2); margin-bottom:3px; }
   .gv   { font-size:15px; font-weight:500; color:var(--dmc-text); }
@@ -353,6 +354,8 @@ class DockerManagerCard extends HTMLElement {
               <div class="gc"><div class="gl" id="l-memp"></div><div class="gv"><span id="v-memp">—</span><span class="gu" id="u-memp"></span></div></div>
               <div class="gc"><div class="gl" id="l-netu"></div><div class="gv"><span id="v-netu">—</span><span class="gu" id="u-netu"></span></div></div>
               <div class="gc"><div class="gl" id="l-netd"></div><div class="gv"><span id="v-netd">—</span><span class="gu" id="u-netd"></span></div></div>
+              <div class="gc"><div class="gl" id="l-nettotalu"></div><div class="gv"><span id="v-nettotalu">—</span><span class="gu" id="u-nettotalu"></span></div></div>
+              <div class="gc"><div class="gl" id="l-nettotald"></div><div class="gv"><span id="v-nettotald">—</span><span class="gu" id="u-nettotald"></span></div></div>
               <div class="gc" id="gc-hlth"><div class="gl" id="l-hlth"></div><div class="gv" id="v-hlth" style="font-size:13px">—</div></div>
             </div>
             <div class="infos">
@@ -384,6 +387,8 @@ class DockerManagerCard extends HTMLElement {
     set("l-memp",    this.t("memory_pct"));
     set("l-netu",    this.t("net_up"));
     set("l-netd",    this.t("net_down"));
+    set("l-nettotalu", this.t("net_total_up"));
+    set("l-nettotald", this.t("net_total_down"));
     set("l-hlth",    this.t("health"));
     set("l-started", this.t("started"));
     set("l-image",   this.t("image"));
@@ -543,8 +548,12 @@ class DockerManagerCard extends HTMLElement {
     set("v-cpu",  cpu);   setHTML("u-cpu",  cpu   !== "—" ? "%" : "");
     set("v-mem",  memMb); setHTML("u-mem",  memMb  !== "—" ? " MB" : "");
     set("v-memp", memPct); setHTML("u-memp", memPct !== "—" ? "%" : "");
+    const netTotalUp   = this._fmt(this._s(ids.net_total_up));
+    const netTotalDown = this._fmt(this._s(ids.net_total_down));
     set("v-netu", netUp);  setHTML("u-netu", netUp  !== "—" ? " kB/s" : "");
     set("v-netd", netDown); setHTML("u-netd", netDown !== "—" ? " kB/s" : "");
+    set("v-nettotalu", netTotalUp);  setHTML("u-nettotalu", netTotalUp  !== "—" ? " MB" : "");
+    set("v-nettotald", netTotalDown); setHTML("u-nettotald", netTotalDown !== "—" ? " MB" : "");
     // Hide health tile if no HEALTHCHECK configured in Docker
     const hlthGc = r.getElementById("gc-hlth");
     if (hlthGc) {
