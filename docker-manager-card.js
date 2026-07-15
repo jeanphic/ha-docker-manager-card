@@ -5,7 +5,7 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "3.1.0";
+const CARD_VERSION = "3.1.1";
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -650,23 +650,34 @@ class DockerManagerCard extends HTMLElement {
       this._render();
       this._call("button", "press", { entity_id: ids.pause_btn });
 
-      // Wait for Docker to actually apply the action before allowing next click
+      // Poll until real HA state matches target, then release
       const target = isPaused ? "running" : "paused";
       const started = Date.now();
+
+      const releasePau = () => {
+        this._localState = null;
+        this._pollToken = null;
+        // Re-enable the button before re-render so it's clickable again
+        const p = r.getElementById("pau");
+        if (p) p.disabled = false;
+        this._render();
+      };
+
       const poll = async () => {
         if (this._pollToken !== token) return;
         if (Date.now() - started > 15000) {
-          this._localState = null; this._pollToken = null; this._render(); return;
+          releasePau(); return;
         }
         const real = this._normalizeState(this._s(ids.state) || "unknown");
         if (real === target) {
-          this._localState = null; this._pollToken = null; this._render();
+          releasePau();
         } else {
-          await new Promise(res => setTimeout(res, 1000)); poll();
+          await new Promise(res => setTimeout(res, 1000));
+          poll();
         }
       };
-      // Give Docker 1s to apply before polling
-      await new Promise(res => setTimeout(res, 1000));
+      // Give Docker 1.5s to apply before polling
+      await new Promise(res => setTimeout(res, 1500));
       poll();
     });
 
