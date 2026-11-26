@@ -5,7 +5,18 @@
  * @version 1.5.0
  */
 
-const CARD_VERSION = "3.1.1";
+const CARD_VERSION = "3.1.2";
+
+// Resolve the docker_manager config entry (= Docker host) behind an entity.
+// Without entry_id the prune_images service always targets the same default host.
+async function dmcEntryIdFor(hass, entityId) {
+  try {
+    const reg = await hass.callWS({ type: "config/entity_registry/get", entity_id: entityId });
+    return reg?.config_entry_id || null;
+  } catch (e) {
+    return null;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // i18n
@@ -982,9 +993,10 @@ class DockerOverviewCard extends HTMLElement {
     pruneBtn?.addEventListener("click", async () => {
       pruneBtn.disabled = true;
       pruneBtn.innerHTML = `<ha-icon icon="mdi:loading"></ha-icon>…`;
-      await this._hass.callService("docker_manager", "prune_images", {
-        all_unused: this._config.all_unused || false,
-      });
+      const data = { all_unused: this._config.all_unused || false };
+      const entryId = await dmcEntryIdFor(this._hass, this._ids().images);
+      if (entryId) data.entry_id = entryId;
+      await this._hass.callService("docker_manager", "prune_images", data);
       await new Promise(res => setTimeout(res, 2000));
       pruneBtn.disabled = false;
       const l2 = this._getLabels();
@@ -1162,8 +1174,7 @@ class DockerMultiOverviewCard extends HTMLElement {
         </div>`;
     }).join("");
 
-    // Prune button — fires on first host by default, or configurable via prune_host index
-    const pruneHost = hosts[this._config.prune_host || 0];
+    // Prune button — all hosts by default, or only one via the prune_host index
     const pruneLabel = "Prune all";
 
     root.innerHTML = `
@@ -1189,9 +1200,21 @@ class DockerMultiOverviewCard extends HTMLElement {
       const btn = e.currentTarget;
       btn.disabled = true;
       btn.innerHTML = `<ha-icon icon="mdi:loading"></ha-icon>…`;
-      await this._hass.callService("docker_manager", "prune_images", {
-        all_unused: this._config.all_unused || false,
-      });
+      // "Prune all": every host, unless prune_host (index) restricts it to one
+      const hostList = this._config.hosts || [];
+      const targets = this._config.prune_host !== undefined && this._config.prune_host !== null
+        ? [hostList[this._config.prune_host]].filter(Boolean)
+        : hostList;
+      for (const host of targets) {
+        const data = { all_unused: this._config.all_unused || false };
+        const entryId = await dmcEntryIdFor(this._hass, this._idsFor(host).images);
+        if (entryId) data.entry_id = entryId;
+        try {
+          await this._hass.callService("docker_manager", "prune_images", data);
+        } catch (err) {
+          console.error("docker-manager-card: prune failed for", host.name || host.prefix, err);
+        }
+      }
       await new Promise(res => setTimeout(res, 2000));
       btn.disabled = false;
       btn.innerHTML = `<ha-icon icon="mdi:broom"></ha-icon>${pruneLabel}`;
